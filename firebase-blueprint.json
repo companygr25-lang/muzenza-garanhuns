@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Capoeira group member",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "monthlyPaid": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "role", "status", "monthlyPaid"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Capoeira event",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "location": { "type": "string" },
+        "price": { "type": "number" },
+        "slots": { "type": "integer" },
+        "availableSlots": { "type": "integer" },
+        "durationDays": { "type": "integer" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "closed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "price", "slots", "availableSlots"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "Event registration",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "nickname": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved"] },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eventId", "userId", "status", "paymentStatus"]
+    },
+    "Item": {
+      "title": "Item",
+      "description": "Store item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "stock": { "type": "integer" },
+        "price": { "type": "number" }
+      },
+      "required": ["name", "stock", "price"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Store order",
+      "type": "object",
+      "properties": {
+        "itemId": { "type": "string" },
+        "userId": { "type": "string" },
+        "quantity": { "type": "integer" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "delivered"] },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "userId", "quantity", "status", "paymentStatus"]
+    },
+    "Config": {
+      "title": "Config",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "pixKey": { "type": "string" },
+        "pixName": { "type": "string" },
+        "pixBank": { "type": "string" },
+        "pixQrCode": { "type": "string" },
+        "highlightedEventId": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "List of events"
+    },
+    "/registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Event registrations"
+    },
+    "/store_items/{itemId}": {
+      "schema": "Item",
+      "description": "Shared store items"
+    },
+    "/store_orders/{orderId}": {
+      "schema": "Order",
+      "description": "Store orders"
+    },
+    "/config/global": {
+      "schema": "Config",
+      "description": "Global app settings"
+    }
+  }
+}
