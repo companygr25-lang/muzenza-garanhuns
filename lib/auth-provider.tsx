@@ -14,6 +14,7 @@ interface UserData {
 
 interface AuthContextType {
   user: UserData | null;
+  userData: UserData | null; // Alias for backward compatibility
   isAdmin: boolean;
   loading: boolean;
   login: (userData: UserData) => void;
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      userData: user,
       isAdmin, 
       loading, 
       login, 
