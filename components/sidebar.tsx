@@ -29,15 +29,14 @@ export const Sidebar = React.memo(function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   const menuItems = React.useMemo(() => [
-    { name: 'Dashboard', href: '/admin_panel/dashboard', icon: LayoutDashboard, adminOnly: true },
+    { name: 'Dashboard', href: isAdmin ? '/admin_panel/dashboard' : '/dashboard', icon: LayoutDashboard, adminOnly: false },
     { name: 'Membros', href: '/admin_panel/users', icon: Users, adminOnly: true },
-    { name: 'Chamada', href: '/admin_panel/attendance', icon: ClipboardCheck, adminOnly: true },
     { name: 'Eventos', href: '/admin_panel/events', icon: Calendar, adminOnly: false },
     { name: 'Loja', href: '/admin_panel/store', icon: ShoppingBag, adminOnly: false },
     { name: 'Regras', href: '/admin_panel/rules', icon: ShieldCheck, adminOnly: false },
     { name: 'Pagamentos', href: '/admin_panel/payments', icon: CreditCard, adminOnly: false },
     { name: 'Configurações', href: '/admin_panel/settings', icon: Settings, adminOnly: true },
-  ], []);
+  ], [isAdmin]);
 
   const filteredItems = React.useMemo(() => {
     return menuItems.filter(item => {

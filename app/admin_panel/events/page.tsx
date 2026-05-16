@@ -34,7 +34,8 @@ export default function EventsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -113,44 +114,36 @@ export default function EventsPage() {
       setShowAdd(false);
       // Wait for fetch to ensure local state is updated even if realtime is slightly delayed
       await fetchEvents();
-    } catch (error) {
+      alert('Evento publicado com sucesso!');
+    } catch (error: any) {
       console.error("Erro ao criar evento:", error);
+      alert('Erro ao criar evento: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Deseja excluir este evento?')) {
-      setIsDeleting(id);
-      try {
-        // If this event is highlighted, we need to clear it first.
-        const { data: currentConfig } = await supabase
-          .from('config')
-          .select('highlighted_event_id')
-          .eq('id', 'global')
-          .single();
-
-        if (currentConfig?.highlighted_event_id === id) {
-          await supabase
-            .from('config')
-            .update({ highlighted_event_id: null })
-            .eq('id', 'global');
-        }
-
-        const { error } = await supabase
-          .from('events')
-          .delete()
-          .eq('id', id);
-        
-        if (error) throw error;
-        
-        await fetchEvents();
-        alert('Evento excluído com sucesso!');
-      } catch (error: any) {
-        console.error("Erro detalhado ao deletar evento:", error);
-        alert(`Erro ao excluir evento: ${error.message || 'Erro desconhecido'}`);
-      } finally {
-        setIsDeleting(null);
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', itemToDelete);
+      
+      if (error) {
+        console.error("Erro detalhado do Supabase ao deletar:", error);
+        throw error;
       }
+      
+      await fetchEvents();
+      setItemToDelete(null);
+      alert('Evento excluído com sucesso!');
+    } catch (error: any) {
+      console.error("Erro detalhado ao deletar evento:", error);
+      alert(`Erro ao excluir evento: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -186,8 +179,10 @@ export default function EventsPage() {
       setIsEditModalOpen(false);
       setEditingEvent(null);
       await fetchEvents();
-    } catch (error) {
+      alert('Evento atualizado com sucesso!');
+    } catch (error: any) {
       console.error("Erro ao atualizar evento:", error);
+      alert('Erro ao atualizar evento: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
@@ -251,13 +246,31 @@ export default function EventsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Data</label>
-                  <input 
-                    required
-                    type="date"
-                    value={newDate}
-                    onChange={e => setNewDate(e.target.value)}
-                    className="w-full bg-brand-dark border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold"
-                  />
+                  <div className="relative group/date">
+                    <input 
+                      required
+                      type="date"
+                      value={newDate}
+                      onChange={e => setNewDate(e.target.value)}
+                      className="w-full bg-brand-dark border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold appearance-none relative z-10"
+                    />
+                    <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within/date:text-brand-red transition-colors z-0" size={20} />
+                    <style jsx>{`
+                      input[type="date"]::-webkit-calendar-picker-indicator {
+                        background: transparent;
+                        bottom: 0;
+                        color: transparent;
+                        cursor: pointer;
+                        height: auto;
+                        left: 0;
+                        position: absolute;
+                        right: 0;
+                        top: 0;
+                        width: auto;
+                        z-index: 20;
+                      }
+                    `}</style>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Descrição</label>
@@ -308,15 +321,11 @@ export default function EventsPage() {
                         <Star size={18} fill={highlightedId === event.id ? "currentColor" : "none"} />
                       </button>
                       <button 
-                        onClick={() => handleDelete(event.id)}
-                        disabled={isDeleting === event.id}
+                        onClick={() => setItemToDelete(event.id)}
+                        disabled={isDeleting && itemToDelete === event.id}
                         className="p-2 bg-[#121212] border border-[#333333] text-gray-500 hover:text-red-500 hover:border-red-500/50 rounded-lg transition-colors disabled:opacity-50"
                       >
-                        {isDeleting === event.id ? (
-                          <div className="w-[18px] h-[18px] border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   )}
@@ -351,6 +360,59 @@ export default function EventsPage() {
           )}
         </div>
         
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {itemToDelete && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setItemToDelete(null)}
+                className="absolute inset-0 bg-black/95 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md bg-[#1A1A1A] border border-brand-red/30 rounded-3xl p-10 shadow-3xl text-center"
+              >
+                <div className="w-20 h-20 bg-brand-red/10 rounded-full flex items-center justify-center mx-auto mb-8 text-brand-red ring-4 ring-brand-red/5">
+                  <Trash2 size={40} />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tighter mb-4">Confirmar Exclusão</h3>
+                <p className="text-gray-400 font-bold mb-10 leading-relaxed uppercase text-[10px] tracking-widest">
+                  Você tem certeza que deseja excluir este evento? Esta ação é irreversível e o evento sumirá para todos os alunos.
+                </p>
+                
+                <div className="flex flex-col gap-4">
+                  <button 
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="w-full py-5 bg-brand-red hover:bg-[#B71C1C] text-white rounded-2xl font-black uppercase tracking-widest text-xs italic transition-all shadow-xl flex items-center justify-center gap-3"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        EXCLUINDO...
+                      </>
+                    ) : (
+                      'SIM, EXCLUIR AGORA'
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => setItemToDelete(null)}
+                    disabled={isDeleting}
+                    className="w-full py-5 bg-[#121212] border border-[#333333] hover:border-white/20 text-gray-400 hover:text-white rounded-2xl font-black uppercase tracking-widest text-xs italic transition-all"
+                  >
+                    CANCELAR
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {/* Edit Modal */}
         <AnimatePresence>
           {isEditModalOpen && (
@@ -398,13 +460,31 @@ export default function EventsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Data</label>
-                    <input 
-                      required
-                      type="date"
-                      value={newDate}
-                      onChange={e => setNewDate(e.target.value)}
-                      className="w-full bg-brand-dark border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold"
-                    />
+                    <div className="relative group/date">
+                      <input 
+                        required
+                        type="date"
+                        value={newDate}
+                        onChange={e => setNewDate(e.target.value)}
+                        className="w-full bg-brand-dark border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold appearance-none relative z-10"
+                      />
+                      <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within/date:text-brand-red transition-colors z-0" size={20} />
+                      <style jsx>{`
+                        input[type="date"]::-webkit-calendar-picker-indicator {
+                          background: transparent;
+                          bottom: 0;
+                          color: transparent;
+                          cursor: pointer;
+                          height: auto;
+                          left: 0;
+                          position: absolute;
+                          right: 0;
+                          top: 0;
+                          width: auto;
+                          z-index: 20;
+                        }
+                      `}</style>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Descrição</label>

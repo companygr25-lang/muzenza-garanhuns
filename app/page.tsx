@@ -28,7 +28,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (user && !loading) {
-      router.push('/admin_panel/dashboard');
+      if (user.role === 'admin') {
+        router.push('/admin_panel/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     }
   }, [user, loading, router]);
 
@@ -100,7 +104,8 @@ export default function LandingPage() {
           graduation: data.graduation
         });
         
-        router.push('/admin_panel/dashboard');
+        const destination = data.role === 'admin' ? '/admin_panel/dashboard' : '/dashboard';
+        router.push(destination);
       } else {
         // Custom signup logic using 'users' table
         const { data: existingUser } = await supabase
@@ -140,7 +145,8 @@ export default function LandingPage() {
           graduation: newUser.graduation
         });
 
-        router.push('/admin_panel/dashboard');
+        const destination = newUser.role === 'admin' ? '/admin_panel/dashboard' : '/dashboard';
+        router.push(destination);
       }
     } catch (err: any) {
       console.error(err);

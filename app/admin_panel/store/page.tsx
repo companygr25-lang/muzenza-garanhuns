@@ -23,6 +23,7 @@ interface Product {
   stock: number;
   category: string;
   image_url?: string;
+  on_sale?: boolean;
 }
 
 const StorePage = () => {
@@ -32,13 +33,15 @@ const StorePage = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState(0);
   const [newStock, setNewStock] = useState(0);
   const [newCat, setNewCat] = useState('Vestuário');
   const [newImage, setNewImage] = useState('');
+  const [onSale, setOnSale] = useState(false);
 
   const fetchProducts = async () => {
     const { data, error } = await supabase
@@ -80,7 +83,8 @@ const StorePage = () => {
           price: Number(newPrice),
           stock: Number(newStock),
           category: newCat,
-          image_url: newImage
+          image_url: newImage,
+          on_sale: onSale
         }]);
 
       if (error) throw error;
@@ -90,9 +94,11 @@ const StorePage = () => {
       setNewImage('');
       setShowAdd(false);
       // Immediate fetch
-      fetchProducts();
-    } catch (error) {
+      await fetchProducts();
+      alert('Produto cadastrado com sucesso!');
+    } catch (error: any) {
       console.error("Erro ao criar produto:", error);
+      alert('Erro ao criar produto: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
@@ -111,25 +117,29 @@ const StorePage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Deseja excluir este item do catálogo?')) {
-      setIsDeleting(id);
-      try {
-        const { error } = await supabase
-          .from('store_items')
-          .delete()
-          .eq('id', id);
-        
-        if (error) throw error;
-        
-        await fetchProducts();
-        alert('Item excluído com sucesso!');
-      } catch (error: any) {
-        console.error("Erro detalhado ao deletar produto:", error);
-        alert(`Erro ao excluir produto: ${error.message || 'Erro desconhecido'}`);
-      } finally {
-        setIsDeleting(null);
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('store_items')
+        .delete()
+        .eq('id', itemToDelete);
+      
+      if (error) {
+        console.error("Erro detalhado do Supabase ao deletar:", error);
+        throw error;
       }
+      
+      await fetchProducts();
+      setItemToDelete(null);
+      alert('Item excluído com sucesso!');
+    } catch (error: any) {
+      console.error("Erro detalhado ao deletar produto:", error);
+      alert(`Erro ao excluir produto: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -144,7 +154,8 @@ const StorePage = () => {
           price: Number(newPrice),
           stock: Number(newStock),
           category: newCat,
-          image_url: newImage
+          image_url: newImage,
+          on_sale: onSale
         })
         .eq('id', editingProduct.id);
 
@@ -152,8 +163,10 @@ const StorePage = () => {
       setIsEditModalOpen(false);
       setEditingProduct(null);
       fetchProducts();
-    } catch (error) {
+      alert('Produto atualizado com sucesso!');
+    } catch (error: any) {
       console.error("Erro ao atualizar produto:", error);
+      alert('Erro ao atualizar produto: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
@@ -164,6 +177,7 @@ const StorePage = () => {
     setNewStock(product.stock);
     setNewCat(product.category);
     setNewImage(product.image_url || '');
+    setOnSale(product.on_sale || false);
     setIsEditModalOpen(true);
   };
 
@@ -238,7 +252,18 @@ const StorePage = () => {
                       className="w-full bg-[#121212] border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="flex items-center gap-4 bg-[#121212] border border-[#333333] rounded-xl p-5 mt-6">
+                    <input 
+                      type="checkbox"
+                      id="onSale"
+                      checked={onSale}
+                      onChange={e => setOnSale(e.target.checked)}
+                      className="w-5 h-5 accent-brand-red rounded border-[#333333]"
+                    />
+                    <label htmlFor="onSale" className="text-[10px] font-black uppercase tracking-widest text-gray-400 cursor-pointer">Colocar em Promoção</label>
+                  </div>
+                </div>
+                <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Quantidade em Estoque</label>
                     <input 
                       required
@@ -247,7 +272,6 @@ const StorePage = () => {
                       onChange={e => setNewStock(Number(e.target.value))}
                       className="w-full bg-[#121212] border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold"
                     />
-                  </div>
                 </div>
                 <button type="submit" className="w-full bg-brand-red py-5 rounded-xl font-black uppercase tracking-widest text-sm italic">
                   CADASTRAR NO SISTEMA
@@ -278,6 +302,11 @@ const StorePage = () => {
                   <div className="text-gray-800 flex flex-col items-center gap-2">
                     <Package size={48} />
                     <span className="text-[9px] font-black tracking-widest uppercase">Sem Imagem</span>
+                  </div>
+                )}
+                {product.on_sale && (
+                  <div className="absolute top-4 left-4 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/20 z-10 shadow-lg">
+                    PROMOÇÃO
                   </div>
                 )}
                 {product.stock <= 5 && (
@@ -343,15 +372,11 @@ const StorePage = () => {
                         <Pencil size={18} />
                       </button>
                       <button 
-                        onClick={() => handleDelete(product.id)}
-                        disabled={isDeleting === product.id}
+                        onClick={() => setItemToDelete(product.id)}
+                        disabled={isDeleting && itemToDelete === product.id}
                         className="p-3 bg-[#121212] border border-[#333333] text-gray-500 hover:text-red-500 hover:border-red-500/50 rounded-xl transition-all disabled:opacity-50"
                       >
-                        {isDeleting === product.id ? (
-                          <div className="w-[18px] h-[18px] border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
+                        <Trash2 size={18} />
                       </button>
                     </>
                   ) : (
@@ -372,6 +397,59 @@ const StorePage = () => {
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {itemToDelete && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setItemToDelete(null)}
+                className="absolute inset-0 bg-black/95 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md bg-[#1A1A1A] border border-brand-red/30 rounded-3xl p-10 shadow-3xl text-center"
+              >
+                <div className="w-20 h-20 bg-brand-red/10 rounded-full flex items-center justify-center mx-auto mb-8 text-brand-red ring-4 ring-brand-red/5">
+                  <Trash2 size={40} />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tighter mb-4">Excluir Item</h3>
+                <p className="text-gray-400 font-bold mb-10 leading-relaxed uppercase text-[10px] tracking-widest">
+                  Você tem certeza que deseja remover este item da loja? Alunos não poderão mais visualizá-lo ou solicitá-lo.
+                </p>
+                
+                <div className="flex flex-col gap-4">
+                  <button 
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="w-full py-5 bg-brand-red hover:bg-[#B71C1C] text-white rounded-2xl font-black uppercase tracking-widest text-xs italic transition-all shadow-xl flex items-center justify-center gap-3"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        REMOVENDO...
+                      </>
+                    ) : (
+                      'REMOVER DEFINITIVAMENTE'
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => setItemToDelete(null)}
+                    disabled={isDeleting}
+                    className="w-full py-5 bg-[#121212] border border-[#333333] hover:border-white/20 text-gray-400 hover:text-white rounded-2xl font-black uppercase tracking-widest text-xs italic transition-all"
+                  >
+                    CANCELAR
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Edit Modal */}
         <AnimatePresence>
@@ -440,7 +518,18 @@ const StorePage = () => {
                         className="w-full bg-[#121212] border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex items-center gap-4 bg-[#121212] border border-[#333333] rounded-xl p-5 mt-6">
+                      <input 
+                        type="checkbox"
+                        id="onSaleEdit"
+                        checked={onSale}
+                        onChange={e => setOnSale(e.target.checked)}
+                        className="w-5 h-5 accent-brand-red rounded border-[#333333]"
+                      />
+                      <label htmlFor="onSaleEdit" className="text-[10px] font-black uppercase tracking-widest text-gray-400 cursor-pointer">Colocar em Promoção</label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Quantidade em Estoque</label>
                       <input 
                         required
@@ -449,7 +538,6 @@ const StorePage = () => {
                         onChange={e => setNewStock(Number(e.target.value))}
                         className="w-full bg-[#121212] border border-[#333333] rounded-xl p-5 text-white outline-none focus:border-brand-red font-bold"
                       />
-                    </div>
                   </div>
                   <button type="submit" className="w-full bg-brand-red py-5 rounded-xl font-black uppercase tracking-widest text-sm italic">
                     SALVAR ALTERAÇÕES
