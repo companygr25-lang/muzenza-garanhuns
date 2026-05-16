@@ -185,13 +185,13 @@ const StorePage = () => {
     <div className="space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-6xl font-black italic tracking-tighter mb-4 uppercase">CATÁLOGO</h1>
+            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-4 uppercase">CATÁLOGO</h1>
             <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Loja oficial Muzenza Garanhuns</p>
           </div>
           {isAdmin && (
             <button 
               onClick={() => setShowAdd(!showAdd)}
-              className="bg-brand-red hover:bg-[#B71C1C] text-white px-8 py-4 rounded-xl flex items-center gap-3 font-black text-xs uppercase tracking-widest transition-all shadow-2xl"
+              className="w-full md:w-auto bg-brand-red hover:bg-[#B71C1C] text-white px-8 py-4 rounded-xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest transition-all shadow-2xl"
             >
               {showAdd ? <Package size={20} /> : <Plus size={20} />}
               {showAdd ? 'FECHAR ESTOQUE' : 'ADICIONAR PRODUTO'}

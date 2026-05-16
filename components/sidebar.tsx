@@ -22,11 +22,26 @@ import { useAuth } from '@/lib/auth-provider';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
-export const Sidebar = React.memo(function Sidebar() {
+export const Sidebar = React.memo(function Sidebar({ 
+  mobileOpen, 
+  setMobileOpen 
+}: { 
+  mobileOpen?: boolean, 
+  setMobileOpen?: (val: boolean) => void 
+}) {
   const pathname = usePathname();
   const { user, isAdmin, logout } = useAuth();
   const [isOpen, setIsOpen] = React.useState(true);
-  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = React.useState(false);
+
+  const activeMobileOpen = mobileOpen !== undefined ? mobileOpen : internalMobileOpen;
+  const toggleMobile = () => {
+    if (setMobileOpen) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setInternalMobileOpen(!internalMobileOpen);
+    }
+  };
 
   const menuItems = React.useMemo(() => [
     { name: 'Dashboard', href: isAdmin ? '/admin_panel/dashboard' : '/dashboard', icon: LayoutDashboard, adminOnly: false },
@@ -56,18 +71,8 @@ export const Sidebar = React.memo(function Sidebar() {
     }
   };
 
-  const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
-
   return (
     <>
-      {/* Mobile Toggle */}
-      <button 
-        onClick={toggleMobile}
-        className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-brand-red text-white rounded-full shadow-lg"
-      >
-        {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
       {/* Sidebar Desktop */}
       <aside className={cn(
         "hidden lg:flex flex-col h-screen sticky top-0 bg-[#000000] text-white border-r border-[#333333] transition-all duration-300",
@@ -153,7 +158,7 @@ export const Sidebar = React.memo(function Sidebar() {
 
       {/* Mobile Sidebar */}
       <AnimatePresence>
-        {isMobileOpen && (
+        {activeMobileOpen && (
           <>
             <motion.div 
               initial={{ opacity: 0 }}
@@ -167,21 +172,25 @@ export const Sidebar = React.memo(function Sidebar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed inset-y-0 left-0 w-3/4 max-w-xs bg-[#000000] text-white p-8 z-50 flex flex-col border-r border-[#333333]"
+              className="lg:hidden fixed inset-y-0 left-0 w-3/4 max-w-xs bg-[#000000] text-white p-6 z-50 flex flex-col border-r border-[#333333] shadow-2xl"
             >
-              <div className="flex flex-col items-center mb-12">
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-white shadow-[0_0_20px_rgba(211,47,47,0.2)] mb-4">
-                  <img 
-                    src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
-                    alt="MUZENZA Logo" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h1 className="text-2xl font-black tracking-tighter text-brand-red">MUZENZA</h1>
-                <span className="text-xs text-gray-500 uppercase tracking-[0.2em] font-bold">Garanhuns - PE</span>
+              <div className="flex justify-between items-center mb-10">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-full overflow-hidden border border-white">
+                      <img 
+                        src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
+                        alt="Logo" 
+                        className="w-full h-full object-cover"
+                      />
+                   </div>
+                   <h1 className="text-lg font-black tracking-tighter text-brand-red">MUZENZA</h1>
+                 </div>
+                 <button onClick={toggleMobile} className="p-2 text-gray-500 hover:text-white">
+                   <X size={24} />
+                 </button>
               </div>
 
-              <nav className="flex-1 space-y-4">
+              <nav className="flex-1 space-y-2">
                 {filteredItems.map((item) => (
                   <Link
                     key={item.href}
@@ -190,22 +199,31 @@ export const Sidebar = React.memo(function Sidebar() {
                     className={cn(
                       "flex items-center gap-4 p-4 rounded-xl transition-all font-bold tracking-tight",
                       pathname === item.href 
-                        ? "bg-brand-red text-white" 
-                        : "text-gray-400"
+                        ? "bg-brand-red text-white shadow-lg shadow-brand-red/20" 
+                        : "text-gray-400 hover:bg-[#1A1A1A] hover:text-white"
                     )}
                   >
-                    <item.icon size={22} />
-                    <span>{item.name}</span>
+                    <item.icon size={20} />
+                    <span className="text-sm uppercase tracking-wider">{item.name}</span>
                   </Link>
                 ))}
               </nav>
 
               <div className="pt-6 border-t border-[#333333] space-y-4">
+                <div className="flex items-center gap-3 px-4">
+                  <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center font-black">
+                     {user?.username?.[0]?.toUpperCase()}
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold uppercase text-white">{user?.username}</p>
+                    <p className="text-gray-500 uppercase tracking-widest text-[8px]">{user?.role}</p>
+                  </div>
+                </div>
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-4 p-4 text-red-500 font-bold"
+                  className="w-full flex items-center gap-4 p-4 text-red-500 font-bold uppercase tracking-widest text-[10px] hover:bg-red-500/10 rounded-xl transition-all"
                 >
-                  <LogOut size={22} />
+                  <LogOut size={18} />
                   <span>Sair</span>
                 </button>
               </div>

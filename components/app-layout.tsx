@@ -5,11 +5,13 @@ import { useAuth } from '@/lib/auth-provider';
 import { Sidebar } from './sidebar';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Menu } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -29,31 +31,43 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Breadcrumbs logic
   const pathParts = pathname.split('/').filter(Boolean);
-  const breadcrumb = pathParts[0] ? pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1) : 'Dashboard';
+  const breadcrumb = pathParts[pathParts.length - 1] 
+    ? pathParts[pathParts.length - 1].charAt(0).toUpperCase() + pathParts[pathParts.length - 1].slice(1).replace('_', ' ') 
+    : 'Dashboard';
 
   return (
     <div className="flex min-h-screen bg-[#121212]">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 border-b border-[#333333] flex items-center justify-between px-8 bg-[#121212] sticky top-0 z-30">
-          <div className="flex items-center space-x-2 text-sm">
-            <span className="text-gray-500 font-medium">Painel de Controle</span>
-            <span className="text-gray-500">/</span>
-            <span className="font-bold text-white tracking-tight">{breadcrumb}</span>
+        <header className="h-16 border-b border-[#333333] flex items-center justify-between px-4 lg:px-8 bg-[#121212] sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+            >
+              <Menu size={24} />
+            </button>
+            <div className="flex items-center space-x-2 text-xs md:text-sm">
+              <span className="hidden md:inline text-gray-500 font-medium whitespace-nowrap">Portal Muzenza</span>
+              <span className="hidden md:inline text-gray-500">/</span>
+              <span className="font-bold text-white tracking-tight truncate max-w-[150px] md:max-w-none">{breadcrumb}</span>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
-             {/* Dynamic content could go here */}
-             <div className="hidden md:flex items-center space-x-4">
-               <div className="w-px h-6 bg-[#333333]"></div>
-               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Status: Online</p>
+             <div className="flex items-center space-x-4">
+               <div className="hidden sm:block w-px h-6 bg-[#333333]"></div>
+               <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black hidden sm:block">SISTEMA ONLINE</p>
+               </div>
              </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto animate-fade-in">
+        <div className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          <div className="max-w-7xl mx-auto animate-fade-in pb-10">
             {children}
           </div>
         </div>

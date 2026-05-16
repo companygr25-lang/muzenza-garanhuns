@@ -83,11 +83,11 @@ export default function PaymentsPage() {
     <div className="space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-6xl font-black italic tracking-tighter mb-4 uppercase">Pagamentos</h1>
+            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-4 uppercase">Pagamentos</h1>
             <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Contribuições e mensalidades</p>
           </div>
           <div className="flex items-center gap-4">
-             <div className="bg-brand-red/10 p-4 border border-brand-red/20 rounded-xl">
+             <div className="bg-brand-red/10 p-4 border border-brand-red/20 rounded-xl w-full md:w-auto">
                <p className="text-[10px] text-brand-red uppercase font-black tracking-widest mb-1">Situação Financeira</p>
                <p className={cn(
                  "text-sm font-black italic tracking-tight",

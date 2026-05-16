@@ -76,7 +76,7 @@ export default function UserDashboard() {
     <div className="space-y-12 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-5xl lg:text-7xl font-black italic tracking-tighter mb-4 uppercase leading-none">Salve, <span className="text-brand-red">{user?.username}</span></h1>
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-black italic tracking-tighter mb-4 uppercase leading-none">Salve, <span className="text-brand-red">{user?.username}</span></h1>
           <p className="text-gray-500 font-bold uppercase text-[10px] lg:text-xs tracking-widest">Bem-vindo ao seu painel Muzenza Garanhuns</p>
         </div>
         <motion.div 

@@ -219,24 +219,24 @@ export default function LandingPage() {
       </div>
 
       {/* Right Side: Auth Form */}
-      <div className="flex items-center justify-center p-8 lg:p-24 bg-[#121212]">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex flex-col items-center gap-4 mb-20 text-center">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-white shadow-[0_0_20px_rgba(211,47,47,0.2)]">
+      <div className="flex items-center justify-center p-6 lg:p-24 bg-[#121212] overflow-y-auto">
+        <div className="w-full max-w-md my-auto pb-10">
+          <div className="lg:hidden flex flex-col items-center gap-4 mb-12 text-center">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-[0_0_20px_rgba(211,47,47,0.2)]">
               <img 
                 src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
                 alt="MUZENZA Logo" 
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-3xl font-black tracking-tighter text-brand-red">MUZENZA</span>
+            <span className="text-2xl font-black tracking-tighter text-brand-red">MUZENZA</span>
           </div>
 
-          <div className="mb-12">
-            <h2 className="text-5xl font-black tracking-tighter mb-4 italic">
+          <div className="mb-8">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-3 italic">
               {isLogin ? 'ENTRAR' : 'CADASTRAR'}
             </h2>
-            <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">
+            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">
               {isLogin 
                 ? 'ACESSE O PAINEL DE CONTROLE' 
                 : 'SEJA BEM-VINDO AO GRUPO'
@@ -255,7 +255,7 @@ export default function LandingPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Seu nome ou apelido"
                   required
-                  className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
+                  className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
                 />
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function LandingPage() {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="(87) 9 0000-0000"
                       required
-                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
+                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
                     />
                   </div>
                 </div>
@@ -285,7 +285,7 @@ export default function LandingPage() {
                       value={graduation}
                       onChange={(e) => setGraduation(e.target.value)}
                       required
-                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
+                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
                     >
                       <option value="Sem Corda">Sem Corda</option>
                       <option value="Crua (Iniciante)">Crua (Iniciante)</option>
@@ -320,7 +320,7 @@ export default function LandingPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
+                  className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
                 />
               </div>
             </div>
@@ -339,7 +339,7 @@ export default function LandingPage() {
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full bg-brand-red hover:bg-[#B71C1C] text-white font-black py-5 rounded-xl shadow-2xl transition-all disabled:opacity-50 uppercase tracking-[0.2em] text-sm mt-4 italic"
+              className="w-full bg-brand-red hover:bg-[#B71C1C] text-white font-black py-4 md:py-5 rounded-xl shadow-2xl transition-all disabled:opacity-50 uppercase tracking-[0.2em] text-xs mt-4 italic"
             >
               {authLoading ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />

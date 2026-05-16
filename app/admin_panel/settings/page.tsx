@@ -103,8 +103,8 @@ export default function Settings() {
   return (
     <div className="space-y-8">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter">CONFIGURAÇÕES</h1>
-          <p className="text-muted-foreground">Gerencie o sistema e as integrações.</p>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase italic">CONFIGURAÇÕES</h1>
+          <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Gerencie o sistema e as integrações.</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">

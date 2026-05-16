@@ -288,7 +288,7 @@ function UsersPage() {
     <div className="space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-6xl font-black italic tracking-tighter mb-4 uppercase">Membros</h1>
+            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-4 uppercase">Membros</h1>
             <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Controle de acesso e mensalidades</p>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
@@ -301,7 +301,7 @@ function UsersPage() {
                 className="flex items-center justify-center gap-2 bg-brand-red text-white px-6 py-4 rounded-xl font-black uppercase text-xs tracking-wider shadow-lg hover:brightness-110 transition-all"
               >
                 <UserPlus size={18} />
-                Novo Membro
+                <span className="whitespace-nowrap">Novo Membro</span>
               </button>
             )}
             <div className="relative w-full md:w-80">
