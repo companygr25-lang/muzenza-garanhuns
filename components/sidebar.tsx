@@ -136,8 +136,12 @@ export const Sidebar = React.memo(function Sidebar({
         <div className="p-4 border-t border-[#333333] space-y-2">
           <div className="flex items-center justify-between mb-4 px-2">
              <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-xs font-bold">
-                 {user?.username?.[0]?.toUpperCase() || 'U'}
+               <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold overflow-hidden border border-[#333333]">
+                 {user?.avatar_url ? (
+                   <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                 ) : (
+                   user?.username?.[0]?.toUpperCase() || 'U'
+                 )}
                </div>
                {isOpen && (
                  <div className="text-xs">
@@ -213,8 +217,12 @@ export const Sidebar = React.memo(function Sidebar({
 
               <div className="pt-6 border-t border-[#333333] space-y-4">
                 <div className="flex items-center gap-3 px-4">
-                  <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center font-black">
-                     {user?.username?.[0]?.toUpperCase()}
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center font-black overflow-hidden border border-[#333333]">
+                     {user?.avatar_url ? (
+                       <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                     ) : (
+                       user?.username?.[0]?.toUpperCase()
+                     )}
                   </div>
                   <div className="text-xs">
                     <p className="font-bold uppercase text-white">{user?.username}</p>

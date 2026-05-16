@@ -22,6 +22,7 @@ interface Profile {
   id: string;
   username: string;
   graduation: string;
+  avatar_url?: string;
 }
 
 interface Attendance {
@@ -42,7 +43,7 @@ export default function AttendancePage() {
   const fetchProfiles = async () => {
     const { data, error } = await supabase
       .from('users')
-      .select('id, username, graduation')
+      .select('id, username, graduation, avatar_url')
       .order('username');
     if (!error) setProfiles(data || []);
   };
@@ -186,12 +187,16 @@ export default function AttendancePage() {
                      >
                        <div className="flex items-center gap-5">
                          <div className={cn(
-                           "w-14 h-14 rounded-2xl flex items-center justify-center font-black italic text-xl border-2 transition-all duration-300",
+                           "w-14 h-14 rounded-2xl flex items-center justify-center font-black italic text-xl border-2 transition-all duration-300 overflow-hidden",
                            isPresent 
                             ? "bg-brand-red border-brand-red text-white shadow-[0_0_20px_rgba(211,47,47,0.3)]" 
                             : "bg-[#121212] border-[#333333] text-gray-600"
                          )}>
-                           {profile.username[0]?.toUpperCase()}
+                           {profile.avatar_url ? (
+                             <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                           ) : (
+                             profile.username[0]?.toUpperCase()
+                           )}
                          </div>
                          <div>
                             <p className={cn(

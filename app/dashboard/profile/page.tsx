@@ -15,6 +15,10 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+const generateFileName = (userId: string, ext: string) => {
+  return `${userId}-${Date.now()}-${Math.random()}.${ext}`;
+};
+
 export default function ProfilePage() {
   const { user, refreshUserData } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -23,6 +27,8 @@ export default function ProfilePage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [graduation, setGraduation] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -30,8 +36,45 @@ export default function ProfilePage() {
       setUsername(user.username || '');
       setPhone(user.phone || '');
       setGraduation(user.graduation || '');
+      setAvatarUrl(user.avatar_url || '');
     }
   }, [user]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      setMessage(null);
+
+      if (!e.target.files || e.target.files.length === 0) {
+        throw new Error('Você deve selecionar uma imagem para fazer o upload.');
+      }
+
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const fileName = generateFileName(user?.id || 'anon', fileExt);
+      const filePath = `${fileName}`;
+
+      // Upload the file to the 'avatars' bucket
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+      setMessage({ type: 'success', text: 'Foto carregada! Lembre-se de salvar as alterações.' });
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      setMessage({ type: 'error', text: 'Erro ao carregar foto: ' + error.message });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +89,8 @@ export default function ProfilePage() {
         .update({
           username,
           phone,
-          graduation
+          graduation,
+          avatar_url: avatarUrl
         })
         .eq('id', user.id);
 
@@ -75,12 +119,16 @@ export default function ProfilePage() {
           <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-8 sticky top-24">
             <div className="flex flex-col items-center text-center">
               <div className="relative mb-6">
-                <div className="w-32 h-32 rounded-full bg-brand-red/10 border-4 border-brand-red flex items-center justify-center text-brand-red text-4xl font-black shadow-2xl">
-                  {user?.username?.[0]?.toUpperCase()}
+                <div className="w-32 h-32 rounded-full bg-brand-red/10 border-4 border-brand-red flex items-center justify-center text-brand-red text-4xl font-black shadow-2xl overflow-hidden">
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                  ) : (
+                    user?.username?.[0]?.toUpperCase()
+                  )}
                 </div>
-                <button className="absolute bottom-0 right-0 p-2 bg-brand-red text-white rounded-full border-4 border-[#1A1A1A] hover:scale-110 transition-transform">
+                <div className="absolute bottom-0 right-0 p-2 bg-brand-red text-white rounded-full border-4 border-[#1A1A1A]">
                   <Camera size={16} />
-                </button>
+                </div>
               </div>
               
               <h2 className="text-2xl font-black tracking-tight mb-1">{user?.username}</h2>
@@ -133,6 +181,36 @@ export default function ProfilePage() {
             )}
 
             <div className="grid md:grid-cols-2 gap-6">
+              <div className="md:col-span-2 space-y-4">
+                <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Foto de Perfil</label>
+                <div className="flex items-center gap-6 p-6 bg-[#121212] border border-[#333333] rounded-2xl">
+                  <div className="w-20 h-20 rounded-full bg-[#1A1A1A] border-2 border-brand-red flex-shrink-0 overflow-hidden flex items-center justify-center font-black text-2xl text-brand-red">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.username?.[0]?.toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <label htmlFor="avatar-upload" className="inline-flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] hover:bg-[#252525] border border-[#333333] text-white rounded-xl font-bold text-xs cursor-pointer transition-colors">
+                      <Camera size={14} />
+                      {uploading ? 'CARREGANDO...' : 'ESCOLHER FOTO'}
+                    </label>
+                    <input 
+                      id="avatar-upload"
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                      Formatos aceitos: JPG, PNG. Tamanho máx: 2MB.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Nome / Apelido</label>
                 <div className="relative">

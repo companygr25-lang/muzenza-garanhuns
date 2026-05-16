@@ -10,6 +10,7 @@ interface UserData {
   phone?: string;
   monthly_paid?: boolean;
   graduation?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -60,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: (data.role || 'user') as 'admin' | 'user',
           phone: data.phone,
           monthly_paid: data.monthly_paid,
-          graduation: data.graduation
+          graduation: data.graduation,
+          avatar_url: data.avatar_url
         };
         setUser(updatedUser);
         localStorage.setItem('muzenza_session', JSON.stringify(updatedUser));

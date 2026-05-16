@@ -28,7 +28,12 @@ interface UserProfile {
   phone?: string;
   monthly_paid?: boolean;
   graduation?: string;
+  avatar_url?: string;
 }
+
+const generateFileName = (ext: string) => {
+  return `${Date.now()}-${Math.random()}.${ext}`;
+};
 
 function UsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -42,7 +47,43 @@ function UsersPage() {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPhone, setNewPhone] = useState('');
+  const [newAvatarUrl, setNewAvatarUrl] = useState('');
   const [newGraduation, setNewGraduation] = useState('Sem Corda');
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      setError(null);
+
+      if (!e.target.files || e.target.files.length === 0) {
+        throw new Error('Selecione uma imagem.');
+      }
+
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const fileName = generateFileName(fileExt);
+      const filePath = `members/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setNewAvatarUrl(publicUrl);
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      setError('Erro ao carregar foto: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const [newRole, setNewRole] = useState<'admin' | 'user'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -114,7 +155,8 @@ function UsersPage() {
           password: newPassword,
           phone: newPhone.trim(),
           role: newRole,
-          graduation: newGraduation
+          graduation: newGraduation,
+          avatar_url: newAvatarUrl.trim()
         });
 
       if (insertError) throw insertError;
@@ -123,6 +165,7 @@ function UsersPage() {
       setNewUsername('');
       setNewPassword('');
       setNewPhone('');
+      setNewAvatarUrl('');
       setNewRole('user');
       setSuccess('Membro criado com sucesso!');
       fetchUsers();
@@ -149,7 +192,8 @@ function UsersPage() {
         username: newUsername.trim(),
         phone: newPhone.trim(),
         role: newRole,
-        graduation: newGraduation
+        graduation: newGraduation,
+        avatar_url: newAvatarUrl.trim()
       };
 
       if (newPassword) {
@@ -180,6 +224,7 @@ function UsersPage() {
     setNewPhone(u.phone || '');
     setNewRole(u.role);
     setNewGraduation(u.graduation || 'Sem Corda');
+    setNewAvatarUrl(u.avatar_url || '');
     setNewPassword('');
     setError(null);
     setIsEditModalOpen(true);
@@ -398,6 +443,32 @@ function UsersPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Foto de Perfil</label>
+                    <div className="flex items-center gap-4 p-4 bg-[#121212] border border-[#333333] rounded-xl">
+                      <div className="w-12 h-12 rounded-lg bg-[#1A1A1A] border border-[#333333] flex-shrink-0 overflow-hidden flex items-center justify-center font-black text-brand-red italic">
+                        {newAvatarUrl ? (
+                          <img src={newAvatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          '?'
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="avatar-upload-add" className="block w-full py-2 px-4 bg-[#1A1A1A] hover:bg-[#252525] border border-[#333333] text-white rounded-lg font-bold text-[10px] uppercase text-center cursor-pointer transition-colors">
+                          {uploading ? 'ENVIANDO...' : 'UPLOAD FOTO'}
+                        </label>
+                        <input 
+                          id="avatar-upload-add"
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          disabled={uploading}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Tipo de Acesso</label>
                     <div className="grid grid-cols-2 gap-4">
                       <button 
@@ -512,6 +583,32 @@ function UsersPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Foto de Perfil</label>
+                    <div className="flex items-center gap-4 p-4 bg-[#121212] border border-[#333333] rounded-xl">
+                      <div className="w-12 h-12 rounded-lg bg-[#1A1A1A] border border-[#333333] flex-shrink-0 overflow-hidden flex items-center justify-center font-black text-brand-red italic">
+                        {newAvatarUrl ? (
+                          <img src={newAvatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          '?'
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="avatar-upload-edit" className="block w-full py-2 px-4 bg-[#1A1A1A] hover:bg-[#252525] border border-[#333333] text-white rounded-lg font-bold text-[10px] uppercase text-center cursor-pointer transition-colors">
+                          {uploading ? 'ENVIANDO...' : 'UPLOAD FOTO'}
+                        </label>
+                        <input 
+                          id="avatar-upload-edit"
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          disabled={uploading}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Tipo de Acesso</label>
                     <div className="grid grid-cols-2 gap-4">
                       <button 
@@ -614,8 +711,12 @@ function UsersPage() {
             {filteredUsers.map((u) => (
               <div key={u.id} className="p-6 space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-[#121212] border border-[#333333] rounded-2xl flex items-center justify-center font-black text-brand-red italic text-xl shadow-lg">
-                    {u.username?.[0]?.toUpperCase()}
+                  <div className="w-14 h-14 bg-[#121212] border border-[#333333] rounded-2xl flex items-center justify-center font-black text-brand-red italic text-xl shadow-lg overflow-hidden">
+                    {u.avatar_url ? (
+                      <img src={u.avatar_url} alt={u.username} className="w-full h-full object-cover" />
+                    ) : (
+                      u.username?.[0]?.toUpperCase()
+                    )}
                   </div>
                   <div className="flex-1">
                     <button 
@@ -717,8 +818,12 @@ function UsersPage() {
                   <tr key={u.id} className="hover:bg-[#252525] transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#121212] border border-[#333333] rounded-xl flex items-center justify-center font-black text-brand-red italic shadow-lg group-hover:border-brand-red transition-colors">
-                          {u.username?.[0]?.toUpperCase()}
+                        <div className="w-12 h-12 bg-[#121212] border border-[#333333] rounded-xl flex items-center justify-center font-black text-brand-red italic shadow-lg group-hover:border-brand-red transition-colors overflow-hidden">
+                          {u.avatar_url ? (
+                            <img src={u.avatar_url} alt={u.username} className="w-full h-full object-cover" />
+                          ) : (
+                            u.username?.[0]?.toUpperCase()
+                          )}
                         </div>
                         <div>
                             <button 

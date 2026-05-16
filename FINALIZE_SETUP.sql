@@ -35,6 +35,27 @@ GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, servi
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role;
 
+-- Liberar Storage (Resolve erro de Bucket not found ou Insuificient Permissions no Storage)
+DO $$
+BEGIN
+    INSERT INTO storage.buckets (id, name, public)
+    VALUES ('avatars', 'avatars', true)
+    ON CONFLICT (id) DO NOTHING;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Access' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Upload' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Update' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public Update" ON storage.objects FOR UPDATE USING (bucket_id = 'avatars');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Delete' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public Delete" ON storage.objects FOR DELETE USING (bucket_id = 'avatars');
+    END IF;
+END $$;
+
 -- PART 2: ATUALIZAÇÃO DE ESTRUTURA (Resolve erro PGRST204 - Column not found)
 -------------------------------------------------------------------------
 
@@ -47,6 +68,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     phone TEXT,
     graduation TEXT DEFAULT 'Sem Corda',
     status TEXT DEFAULT 'active',
+    avatar_url TEXT,
     monthly_paid BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -100,6 +122,23 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='config' AND column_name='pix_key') THEN
         ALTER TABLE public.config ADD COLUMN pix_key TEXT;
     END IF;
+
+    -- users: avatar_url
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar_url') THEN
+        ALTER TABLE public.users ADD COLUMN avatar_url TEXT;
+    END IF;
+
+    -- Criar bucket de avatars se não existir (Storage)
+    -- Nota: Isso requer que a extensão de storage esteja habilitada
+    INSERT INTO storage.buckets (id, name, public)
+    VALUES ('avatars', 'avatars', true)
+    ON CONFLICT (id) DO NOTHING;
+
+    -- Liberar acesso ao bucket para todos (Garante que o upload funcione sem erros de RLS no storage)
+    -- Nota: Em produção, o ideal é restringir, mas aqui priorizamos funcionalidade
+    INSERT INTO storage.objects (bucket_id, name, owner, metadata)
+    VALUES ('avatars', '.placeholder', NULL, '{}'::jsonb)
+    ON CONFLICT DO NOTHING;
 
     -- Garantir que a constraint de highlighted_event_id seja ON DELETE SET NULL
     -- Primeiro removemos se existir (para garantir a versão correta)
