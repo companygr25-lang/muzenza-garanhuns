@@ -30,7 +30,8 @@ export default function RulesPage() {
         .single();
       
       if (!error && data) {
-        setRules(data.rules || [
+        const fetchedRules = Array.isArray(data.rules) ? data.rules : [];
+        setRules(fetchedRules.length > 0 ? fetchedRules : [
           "Vencimento todo dia 10 de cada mês",
           "O não pagamento impede participação em eventos",
           "Membros em atraso não podem retirar abadás da loja",
@@ -63,20 +64,24 @@ export default function RulesPage() {
       alert('Regras atualizadas com sucesso!');
     } catch (err) {
       console.error("Erro ao salvar regras:", err);
+      alert("Erro ao salvar regras: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
   const addRule = () => {
+    if (!Array.isArray(rules)) return;
     setRules([...rules, "Nova regra..."]);
   };
 
   const updateRule = (index: number, val: string) => {
+    if (!Array.isArray(rules)) return;
     const newRules = [...rules];
     newRules[index] = val;
     setRules(newRules);
   };
 
   const removeRule = (index: number) => {
+    if (!Array.isArray(rules)) return;
     setRules(rules.filter((_, i) => i !== index));
   };
 
@@ -118,7 +123,7 @@ export default function RulesPage() {
 
                   <div className="space-y-4">
                     <AnimatePresence>
-                      {rules.map((rule, i) => (
+                      {Array.isArray(rules) && rules.map((rule, i) => (
                         <motion.div 
                           key={i}
                           initial={{ x: -20, opacity: 0 }}
