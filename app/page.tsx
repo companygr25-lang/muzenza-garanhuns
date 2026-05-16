@@ -288,22 +288,29 @@ export default function LandingPage() {
                       className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
                     >
                       <option value="Sem Corda">Sem Corda</option>
-                      <option value="Crua (Iniciante)">Crua (Iniciante)</option>
+                      <option value="Cinza">Cinza</option>
+                      <option value="Cinza/Amarela">Cinza/Amarela</option>
                       <option value="Amarela">Amarela</option>
                       <option value="Amarela/Laranja">Amarela/Laranja</option>
-                      <option value="Laranja (Monitor)">Laranja (Monitor)</option>
-                      <option value="Laranja/Azul">Laranja/Azul</option>
-                      <option value="Azul (Graduado)">Azul (Graduado)</option>
-                      <option value="Azul/Verde">Azul/Verde</option>
-                      <option value="Verde (Instrutor)">Verde (Instrutor)</option>
-                      <option value="Verde/Roxa">Verde/Roxa</option>
-                      <option value="Roxa (Professor)">Roxa (Professor)</option>
-                      <option value="Roxa/Marrom">Roxa/Marrom</option>
-                      <option value="Marrom (Contra-Mestre)">Marrom (Contra-Mestre)</option>
-                      <option value="Marrom/Vermelha">Marrom/Vermelha</option>
-                      <option value="Vermelha (Mestre)">Vermelha (Mestre)</option>
-                      <option value="Preta (Mestre)">Preta (Mestre)</option>
-                      <option value="Branca (Mestre)">Branca (Mestre)</option>
+                      <option value="Laranja">Laranja</option>
+                      <option value="Laranja/Verde">Laranja/Verde</option>
+                      <option value="Verde">Verde</option>
+                      <option value="Verde/Vermelha">Verde/Vermelha</option>
+                      <option value="Verde/Azul (Graduado)">Verde/Azul (Graduado)</option>
+                      <option value="Vermelho/Azul (Monitor)">Vermelho/Azul (Monitor)</option>
+                      <option value="Azul (Instrutor)">Azul (Instrutor)</option>
+                      <option value="Vermelho/Branco (Professor 1º Grau)">Vermelho/Branco (Professor 1º Grau)</option>
+                      <option value="Vermelho/Marrom (Professor 2º Grau)">Vermelho/Marrom (Professor 2º Grau)</option>
+                      <option value="Vermelho/Preto (Professor 3º Grau)">Vermelho/Preto (Professor 3º Grau)</option>
+                      <option value="Roxo (Contra-Mestre 1º Grau)">Roxo (Contra-Mestre 1º Grau)</option>
+                      <option value="Roxo/Marrom (Contra-Mestre 2º Grau)">Roxo/Marrom (Contra-Mestre 2º Grau)</option>
+                      <option value="Marrom (Contra-Mestre 3º Grau)">Marrom (Contra-Mestre 3º Grau)</option>
+                      <option value="Vermelha (Mestre 1º Grau)">Vermelha (Mestre 1º Grau)</option>
+                      <option value="Preta (Mestre 2º Grau)">Preta (Mestre 2º Grau)</option>
+                      <option value="Branca (Mestre 3º Grau)">Branca (Mestre 3º Grau)</option>
+                      <option value="Branco/Vinho (Mestre 4º Grau)">Branco/Vinho (Mestre 4º Grau)</option>
+                      <option value="Branco (Mestre)">Branco (Mestre)</option>
+                      <option value="Amarelo/Preto (Estagiário)">Amarelo/Preto (Estagiário)</option>
                     </select>
                   </div>
                 </div>

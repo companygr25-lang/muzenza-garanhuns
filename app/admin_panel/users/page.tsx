@@ -42,6 +42,7 @@ function UsersPage() {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPhone, setNewPhone] = useState('');
+  const [newGraduation, setNewGraduation] = useState('Sem Corda');
   const [newRole, setNewRole] = useState<'admin' | 'user'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -113,7 +114,7 @@ function UsersPage() {
           password: newPassword,
           phone: newPhone.trim(),
           role: newRole,
-          graduation: 'Sem Corda'
+          graduation: newGraduation
         });
 
       if (insertError) throw insertError;
@@ -148,6 +149,7 @@ function UsersPage() {
         username: newUsername.trim(),
         phone: newPhone.trim(),
         role: newRole,
+        graduation: newGraduation
       };
 
       if (newPassword) {
@@ -177,6 +179,7 @@ function UsersPage() {
     setNewUsername(u.username);
     setNewPhone(u.phone || '');
     setNewRole(u.role);
+    setNewGraduation(u.graduation || 'Sem Corda');
     setNewPassword('');
     setError(null);
     setIsEditModalOpen(true);
@@ -382,6 +385,19 @@ function UsersPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Graduação</label>
+                    <select 
+                      value={newGraduation}
+                      onChange={e => setNewGraduation(e.target.value)}
+                      className="w-full bg-[#121212] border border-[#333333] rounded-xl py-4 px-6 text-white font-bold tracking-tight outline-none focus:border-brand-red transition-all appearance-none"
+                    >
+                      {graduations.map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Tipo de Acesso</label>
                     <div className="grid grid-cols-2 gap-4">
                       <button 
@@ -480,6 +496,19 @@ function UsersPage() {
                       onChange={e => setNewPhone(e.target.value)}
                       className="w-full bg-[#121212] border border-[#333333] rounded-xl py-4 px-6 text-white font-bold tracking-tight outline-none focus:border-brand-red transition-all"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Graduação</label>
+                    <select 
+                      value={newGraduation}
+                      onChange={e => setNewGraduation(e.target.value)}
+                      className="w-full bg-[#121212] border border-[#333333] rounded-xl py-4 px-6 text-white font-bold tracking-tight outline-none focus:border-brand-red transition-all appearance-none"
+                    >
+                      {graduations.map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-2">

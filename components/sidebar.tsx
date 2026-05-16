@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
+  User,
   LayoutDashboard, 
   Users, 
   Calendar, 
@@ -45,6 +46,7 @@ export const Sidebar = React.memo(function Sidebar({
 
   const menuItems = React.useMemo(() => [
     { name: 'Dashboard', href: isAdmin ? '/admin_panel/dashboard' : '/dashboard', icon: LayoutDashboard, adminOnly: false },
+    { name: 'Perfil', href: isAdmin ? '/admin_panel/profile' : '/dashboard/profile', icon: User, adminOnly: false },
     { name: 'Membros', href: '/admin_panel/users', icon: Users, adminOnly: true },
     { name: 'Eventos', href: '/admin_panel/events', icon: Calendar, adminOnly: false },
     { name: 'Loja', href: '/admin_panel/store', icon: ShoppingBag, adminOnly: false },
