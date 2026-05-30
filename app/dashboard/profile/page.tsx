@@ -84,6 +84,8 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
+      const oldAvatar = user.avatar_url;
+
       const { error } = await supabase
         .from('users')
         .update({
@@ -95,6 +97,19 @@ export default function ProfilePage() {
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Se atualizou com sucesso e a foto nova é diferente, remove o arquivo da foto antiga para evitar acumular fotos duplicadas
+      if (oldAvatar && oldAvatar !== avatarUrl) {
+        try {
+          const parts = oldAvatar.split('/public/avatars/');
+          if (parts.length > 1) {
+            const oldPath = decodeURIComponent(parts[1]);
+            await supabase.storage.from('avatars').remove([oldPath]);
+          }
+        } catch (storageErr) {
+          console.error("Erro ao deletar arquivo antigo do storage:", storageErr);
+        }
+      }
 
       await refreshUserData();
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });

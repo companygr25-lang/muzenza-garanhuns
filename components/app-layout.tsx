@@ -6,18 +6,31 @@ import { Sidebar } from './sidebar';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Menu } from 'lucide-react';
+import { ManualModal } from './manual-modal';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [manualOpen, setManualOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
   }, [user, loading, router]);
+
+  React.useEffect(() => {
+    if (user && typeof window !== 'undefined') {
+      const isNewRegister = localStorage.getItem('muzenza_new_register');
+      if (isNewRegister === 'true') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setManualOpen(true);
+        localStorage.removeItem('muzenza_new_register');
+      }
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -37,10 +50,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-[#121212]">
-      <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
+      <Sidebar 
+        mobileOpen={mobileMenuOpen} 
+        setMobileOpen={setMobileMenuOpen} 
+        onOpenManual={() => setManualOpen(true)}
+      />
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 border-b border-[#333333] flex items-center justify-between px-4 lg:px-8 bg-[#121212] sticky top-0 z-30">
+        <header className="h-20 sm:h-16 border-b border-[#333333] flex items-center justify-between px-4 lg:px-8 bg-[#121212] sticky top-0 z-30 pt-4 sm:pt-0">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setMobileMenuOpen(true)}
@@ -66,12 +83,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div className="flex-1 p-6 md:p-8 lg:p-12 overflow-y-auto">
           <div className="max-w-7xl mx-auto animate-fade-in pb-10">
             {children}
           </div>
         </div>
       </main>
+
+      {/* Manual Modal / Slides Guide */}
+      <ManualModal isOpen={manualOpen} onClose={() => setManualOpen(false)} />
     </div>
   );
 }

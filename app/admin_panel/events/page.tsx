@@ -43,10 +43,12 @@ export default function EventsPage() {
   const [newLoc, setNewLoc] = useState('');
 
   const fetchEvents = async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('date', { ascending: true });
+    if (!user) return;
+    let query = supabase.from('events').select('*');
+    if (user.role === 'director') {
+      query = query.or(`director_id.eq.${user.id},director_id.is.null`);
+    }
+    const { data, error } = await query.order('date', { ascending: true });
     
     if (error) {
       console.error("Erro ao buscar eventos:", error);
@@ -70,6 +72,8 @@ export default function EventsPage() {
   };
 
   useEffect(() => {
+    if (!user) return;
+    
     const init = async () => {
       await fetchEvents();
       await fetchConfig();
@@ -92,19 +96,24 @@ export default function EventsPage() {
       supabase.removeChannel(eventsChannel);
       supabase.removeChannel(configChannel);
     };
-  }, []);
+  }, [user]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload: any = {
+        title: newTitle,
+        description: newDesc,
+        date: newDate,
+        location: newLoc
+      };
+      if (user && user.role === 'director') {
+        payload.director_id = user.id;
+      }
+      
       const { error } = await supabase
         .from('events')
-        .insert([{
-          title: newTitle,
-          description: newDesc,
-          date: newDate,
-          location: newLoc
-        }]);
+        .insert([payload]);
 
       if (error) throw error;
       setNewTitle('');

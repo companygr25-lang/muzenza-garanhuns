@@ -11,11 +11,54 @@ import {
   Phone, 
   ChevronRight, 
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Globe,
+  MapPin,
+  Camera,
+  Image as LucideImage
 } from 'lucide-react';
 
+const compressImageToDataURL = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 120;
+        const MAX_HEIGHT = 120;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
+      };
+      img.onerror = () => resolve('');
+    };
+    reader.onerror = () => resolve('');
+  });
+};
+
 export default function LandingPage() {
-  const { user, loading, login, refreshUserData } = useAuth();
+  const { user, loading, login, appConfig, setAppConfig } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,15 +69,67 @@ export default function LandingPage() {
   const [highlightedEvent, setHighlightedEvent] = useState<any>(null);
   const router = useRouter();
 
+  // Multi-gestão / Outras equipes states
+  const [regType, setRegType] = useState<'student' | 'director'>('student');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
+  const [selectedDirectorId, setSelectedDirectorId] = useState('');
+  const [directors, setDirectors] = useState<any[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // Sync brand details dynamically when user changes current selecting region or registration
+  useEffect(() => {
+    if (!isLogin && regType === 'student') {
+      if (!selectedDirectorId) {
+        setAppConfig({
+          logoUrl: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
+          cityName: 'GARANHUNS',
+          countryName: 'PE'
+        });
+      } else {
+        const d = directors.find(dir => dir.id === selectedDirectorId);
+        if (d) {
+          const config = {
+            logoUrl: d.avatar_url || 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
+            cityName: d.city || 'Desconhecido',
+            countryName: d.country || 'PE'
+          };
+          setAppConfig(config);
+          localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
+        }
+      }
+    }
+  }, [selectedDirectorId, directors, regType, isLogin, setAppConfig]);
+
   useEffect(() => {
     if (user && !loading) {
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.role === 'director') {
         router.push('/admin_panel/dashboard');
       } else {
         router.push('/dashboard');
       }
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    async function fetchDirectors() {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, username, city, country, avatar_url')
+          .eq('role', 'director')
+          .order('username', { ascending: true });
+        
+        if (!error && data) {
+          setDirectors(data);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar diretores:", err);
+      }
+    }
+    fetchDirectors();
+  }, [isLogin]);
 
   useEffect(() => {
     async function fetchHighlighted() {
@@ -63,6 +158,62 @@ export default function LandingPage() {
     }
     fetchHighlighted();
   }, []);
+
+  const generateFileName = (ext: string) => {
+    return `${Date.now()}-${Math.random()}.${ext}`;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      setError('');
+
+      if (!e.target.files || e.target.files.length === 0) {
+        throw new Error('Selecione uma imagem.');
+      }
+
+      const file = e.target.files[0];
+      
+      // Realiza compressão instantânea em escala local (50ms) para obter o Base64 ultra compacto
+      const localBase64 = await compressImageToDataURL(file);
+      if (!localBase64) {
+        throw new Error('Falha ao otimizar a imagem.');
+      }
+
+      // Define o avatar local de imediato! A foto muda na hora e o formulário já pode ser enviado
+      setAvatarUrl(localBase64);
+
+      // Dispara o upload do Storage de forma 100% assíncrona em background.
+      // O usuário NÃO aguarda o término desta chamada para poder finalizar o cadastro!
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const fileName = generateFileName(fileExt);
+      const filePath = `avatars/${fileName}`;
+
+      supabase.storage
+        .from('avatars')
+        .upload(filePath, file)
+        .then((res: any) => {
+          const uploadError = res?.error;
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            
+            // Se o upload assíncrono der certo, atualiza para o link público estático
+            setAvatarUrl(publicUrl);
+          }
+        })
+        .catch((storageErr: any) => {
+          console.warn("Storage upload failed silently. Continuing using instant base64:", storageErr);
+        });
+
+    } catch (err: any) {
+      console.error('Erro no upload rápido:', err);
+      setError('Erro ao carregar foto: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,13 +249,17 @@ export default function LandingPage() {
         login({
           id: data.id,
           username: data.username,
-          role: data.role as 'admin' | 'user',
+          role: data.role as 'admin' | 'user' | 'director',
           phone: data.phone,
           monthly_paid: data.monthly_paid,
-          graduation: data.graduation
+          graduation: data.graduation,
+          city: data.city,
+          country: data.country,
+          director_id: data.director_id,
+          avatar_url: data.avatar_url
         });
         
-        const destination = data.role === 'admin' ? '/admin_panel/dashboard' : '/dashboard';
+        const destination = (data.role === 'admin' || data.role === 'director') ? '/admin_panel/dashboard' : '/dashboard';
         router.push(destination);
       } else {
         // Custom signup logic using 'users' table
@@ -120,14 +275,44 @@ export default function LandingPage() {
 
         const isAdminUser = username.toUpperCase().trim() === 'BOLACHA';
 
+        let finalRole: 'user' | 'director' | 'admin' = 'user';
+        let finalCity = 'Garanhuns';
+        let finalCountry = 'Brasil';
+        let finalDirectorId: string | null = null;
+
+        if (isAdminUser) {
+          finalRole = 'admin';
+        } else if (regType === 'director') {
+          finalRole = 'director';
+          if (!city.trim() || !country.trim()) {
+            throw new Error('Cidade e país são obrigatórios para cadastro de diretor.');
+          }
+          finalCity = city.trim();
+          finalCountry = country.trim();
+        } else {
+          // Student signup: inherit city/country from selected director
+          if (selectedDirectorId) {
+            const direct = directors.find(d => d.id === selectedDirectorId);
+            if (direct) {
+              finalDirectorId = selectedDirectorId;
+              finalCity = direct.city || 'Garanhuns';
+              finalCountry = direct.country || 'Brasil';
+            }
+          }
+        }
+
         const { data: newUser, error: signUpError } = await supabase
           .from('users')
           .insert({
             username: username.trim(),
             password: password,
             phone: phone,
-            role: isAdminUser ? 'admin' : 'user',
-            graduation: isAdminUser ? 'Verde (Instrutor)' : graduation
+            role: finalRole,
+            graduation: isAdminUser ? 'Verde (Instrutor)' : graduation,
+            city: finalCity,
+            country: finalCountry,
+            director_id: finalDirectorId,
+            avatar_url: regType === 'director' && avatarUrl ? avatarUrl : null
           })
           .select()
           .single();
@@ -136,16 +321,24 @@ export default function LandingPage() {
         
         if (!newUser) throw new Error('Falha ao criar conta.');
 
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('muzenza_new_register', 'true');
+        }
+
         login({
           id: newUser.id,
           username: newUser.username,
-          role: newUser.role as 'admin' | 'user',
+          role: newUser.role as 'admin' | 'user' | 'director',
           phone: newUser.phone,
           monthly_paid: newUser.monthly_paid,
-          graduation: newUser.graduation
+          graduation: newUser.graduation,
+          city: newUser.city,
+          country: newUser.country,
+          director_id: newUser.director_id,
+          avatar_url: newUser.avatar_url
         });
 
-        const destination = newUser.role === 'admin' ? '/admin_panel/dashboard' : '/dashboard';
+        const destination = (newUser.role === 'admin' || newUser.role === 'director') ? '/admin_panel/dashboard' : '/dashboard';
         router.push(destination);
       }
     } catch (err: any) {
@@ -167,14 +360,16 @@ export default function LandingPage() {
         <div className="z-10 flex items-center gap-4 mb-24 animate-fade-in">
           <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-[0_0_40px_rgba(211,47,47,0.3)]">
             <img 
-              src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
+              src={appConfig.logoUrl} 
               alt="MUZENZA Logo" 
               className="w-full h-full object-cover"
             />
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-tighter leading-none text-brand-red">MUZENZA</h1>
-            <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-gray-500 mt-1">GARANHUNS • PERNAMBUCO</p>
+            <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-gray-500 mt-1">
+              {(appConfig.cityName || 'GARANHUNS').toUpperCase()} • {(appConfig.countryName || 'PE').toUpperCase()}
+            </p>
           </div>
         </div>
 
@@ -187,7 +382,7 @@ export default function LandingPage() {
             FORÇA,<br />RAÇA,<br /><span className="text-brand-red">FÉ.</span>
           </motion.h1>
           <p className="text-gray-400 text-xl leading-relaxed mb-16 max-w-md font-medium">
-            O coração do Grupo Muzenza Garanhuns agora digitalizado. Gestão de membros, roda, eventos e nossa tradição.
+            O coração do Grupo Muzenza {(appConfig.cityName || 'GARANHUNS')} agora digitalizado. Gestão de membros, roda, eventos e nossa tradição.
           </p>
 
           {highlightedEvent && (
@@ -219,17 +414,22 @@ export default function LandingPage() {
       </div>
 
       {/* Right Side: Auth Form */}
-      <div className="flex items-center justify-center p-6 lg:p-24 bg-[#121212] overflow-y-auto">
+      <div className="flex items-center justify-center p-6 pt-16 md:p-12 lg:p-24 bg-[#121212] overflow-y-auto">
         <div className="w-full max-w-md my-auto pb-10">
           <div className="lg:hidden flex flex-col items-center gap-4 mb-12 text-center">
             <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-[0_0_20px_rgba(211,47,47,0.2)]">
               <img 
-                src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
+                src={appConfig.logoUrl} 
                 alt="MUZENZA Logo" 
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-2xl font-black tracking-tighter text-brand-red">MUZENZA</span>
+            <div className="text-center">
+              <span className="text-2xl font-black tracking-tighter text-brand-red block leading-none">MUZENZA</span>
+              <span className="text-[9px] font-black tracking-widest text-gray-500 uppercase">
+                {(appConfig.cityName || 'GARANHUNS').toUpperCase()} - {(appConfig.countryName || 'PE').toUpperCase()}
+              </span>
+            </div>
           </div>
 
           <div className="mb-8">
@@ -245,6 +445,53 @@ export default function LandingPage() {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-6">
+            {isLogin && (
+              <div className="space-y-3 animate-fade-in">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Selecione sua Cidade / Região</label>
+                <div className="relative">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                  <select
+                    value={selectedDirectorId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedDirectorId(id);
+                      if (!id) {
+                        const config = {
+                          logoUrl: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
+                          cityName: 'GARANHUNS',
+                          countryName: 'PE'
+                        };
+                        setAppConfig(config);
+                        localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
+                      } else {
+                        const d = directors.find(dir => dir.id === id);
+                        if (d) {
+                          const config = {
+                            logoUrl: d.avatar_url || 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
+                            cityName: d.city || 'Desconhecido',
+                            countryName: d.country || 'PE'
+                          };
+                          setAppConfig(config);
+                          localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
+                        }
+                      }
+                    }}
+                    className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 pl-14 pr-10 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none cursor-pointer text-sm"
+                  >
+                    <option value="">Matriz Garanhuns (Bolacha) • GARANHUNS - PE</option>
+                    {directors.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.username.toUpperCase()} • {(d.city || 'Desconhecido').toUpperCase()} - {(d.country || 'PE').toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-[8px]">
+                    ▼
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Usuário</label>
               <div className="relative">
@@ -262,56 +509,214 @@ export default function LandingPage() {
 
             {!isLogin && (
               <>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">WhatsApp</label>
-                  <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="(87) 9 0000-0000"
-                      required
-                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
-                    />
-                  </div>
+                {/* Tabs to select registration type */}
+                <div className="flex bg-[#161616] p-1.5 rounded-xl border border-[#333333] mb-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegType('student');
+                      setError('');
+                    }}
+                    className={`flex-1 text-[10px] font-black uppercase tracking-wider py-3 rounded-lg transition-all ${
+                      regType === 'student'
+                        ? 'bg-brand-red text-white'
+                        : 'text-gray-500 hover:text-white'
+                    }`}
+                  >
+                    Aluno / Membro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegType('director');
+                      setError('');
+                    }}
+                    className={`flex-1 text-[10px] font-black uppercase tracking-wider py-3 rounded-lg transition-all ${
+                      regType === 'director'
+                        ? 'bg-brand-red text-white'
+                        : 'text-gray-500 hover:text-white'
+                    }`}
+                  >
+                    Novo Diretor
+                  </button>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Graduação / Corda</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
-                    <select
-                      value={graduation}
-                      onChange={(e) => setGraduation(e.target.value)}
-                      required
-                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
-                    >
-                      <option value="Sem Corda">Sem Corda</option>
-                      <option value="Cinza">Cinza</option>
-                      <option value="Cinza/Amarela">Cinza/Amarela</option>
-                      <option value="Amarela">Amarela</option>
-                      <option value="Amarela/Laranja">Amarela/Laranja</option>
-                      <option value="Laranja">Laranja</option>
-                      <option value="Laranja/Verde">Laranja/Verde</option>
-                      <option value="Verde">Verde</option>
-                      <option value="Verde/Vermelha">Verde/Vermelha</option>
-                      <option value="Verde/Azul (Graduado)">Verde/Azul (Graduado)</option>
-                      <option value="Vermelho/Azul (Monitor)">Vermelho/Azul (Monitor)</option>
-                      <option value="Azul (Instrutor)">Azul (Instrutor)</option>
-                      <option value="Vermelho/Branco (Professor 1º Grau)">Vermelho/Branco (Professor 1º Grau)</option>
-                      <option value="Vermelho/Marrom (Professor 2º Grau)">Vermelho/Marrom (Professor 2º Grau)</option>
-                      <option value="Vermelho/Preto (Professor 3º Grau)">Vermelho/Preto (Professor 3º Grau)</option>
-                      <option value="Roxo (Contra-Mestre 1º Grau)">Roxo (Contra-Mestre 1º Grau)</option>
-                      <option value="Roxo/Marrom (Contra-Mestre 2º Grau)">Roxo/Marrom (Contra-Mestre 2º Grau)</option>
-                      <option value="Marrom (Contra-Mestre 3º Grau)">Marrom (Contra-Mestre 3º Grau)</option>
-                      <option value="Vermelha (Mestre 1º Grau)">Vermelha (Mestre 1º Grau)</option>
-                      <option value="Preta (Mestre 2º Grau)">Preta (Mestre 2º Grau)</option>
-                      <option value="Branca (Mestre 3º Grau)">Branca (Mestre 3º Grau)</option>
-                      <option value="Branco/Vinho (Mestre 4º Grau)">Branco/Vinho (Mestre 4º Grau)</option>
-                      <option value="Branco (Mestre)">Branco (Mestre)</option>
-                      <option value="Amarelo/Preto (Estagiário)">Amarelo/Preto (Estagiário)</option>
-                    </select>
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">WhatsApp</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="(87) 9 0000-0000"
+                        required
+                        className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {regType === 'director' ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Cidade</label>
+                          <div className="relative">
+                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18} />
+                            <input
+                              type="text"
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                              placeholder="Ex: Paris"
+                              required={regType === 'director'}
+                              className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 pl-12 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">País</label>
+                          <div className="relative">
+                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18} />
+                            <input
+                              type="text"
+                              value={country}
+                              onChange={(e) => setCountry(e.target.value)}
+                              placeholder="Ex: França"
+                              required={regType === 'director'}
+                              className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 pl-12 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Foto de Perfil (Diretoria)</label>
+                        <div className="bg-[#1A1A1A] border border-[#333333] rounded-xl p-4 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-brand-red bg-[#121212] flex items-center justify-center shrink-0">
+                              {avatarUrl ? (
+                                <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                              ) : (
+                                <Camera size={20} className="text-gray-500" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-white leading-tight">Escolha uma foto</p>
+                              <p className="text-[10px] text-gray-500">Imagens JPG, PNG até 5MB</p>
+                            </div>
+                          </div>
+                          <label className="bg-[#2a2a2a] hover:bg-brand-red hover:text-white px-4 py-2 rounded-lg text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all shrink-0">
+                            {uploading ? 'Carregando...' : 'Fazer Upload'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileUpload}
+                              disabled={uploading}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+
+                        {/* Seletor de Avatares Rápidos Inteligentes */}
+                        <div className="bg-[#161616] border border-[#2a2a2a] rounded-xl p-3.5 space-y-2 mt-2">
+                          <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none">
+                            Ou use um avatar rápido de diretoria (Instantâneo):
+                          </p>
+                          <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-none">
+                            {[
+                              { name: 'Logo', url: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg' },
+                              { name: 'Leão', url: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=150&auto=format&fit=crop&q=60' },
+                              { name: 'Berimbau', url: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?w=150&auto=format&fit=crop&q=60' },
+                              { name: 'Diretor', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60' },
+                              { name: 'Diretora', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60' }
+                            ].map((preset, index) => {
+                              const isSelected = avatarUrl === preset.url;
+                              return (
+                                <button
+                                  type="button"
+                                  key={index}
+                                  onClick={() => {
+                                    setAvatarUrl(preset.url);
+                                    setError('');
+                                  }}
+                                  className={`relative w-11 h-11 rounded-full overflow-hidden shrink-0 border-2 transition-all ${
+                                    isSelected 
+                                      ? 'border-brand-red scale-110 shadow-[0_0_12px_rgba(211,47,47,0.5)]' 
+                                      : 'border-[#333333] opacity-60 hover:opacity-100 hover:scale-105'
+                                  }`}
+                                  title={preset.name}
+                                >
+                                  <img 
+                                    src={preset.url} 
+                                    alt={preset.name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Diretor / Equipe</label>
+                      <div className="relative">
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
+                        <select
+                          value={selectedDirectorId}
+                          onChange={(e) => setSelectedDirectorId(e.target.value)}
+                          className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
+                        >
+                          <option value="">Matriz Garanhuns (Mestre Bolacha) • PE, Brasil</option>
+                          {directors.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.username.toUpperCase()} • {d.city || 'Desconhecido'}, {d.country || 'Desconhecido'}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Graduação / Corda</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
+                      <select
+                        value={graduation}
+                        onChange={(e) => setGraduation(e.target.value)}
+                        required
+                        className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
+                      >
+                        <option value="Sem Corda">Sem Corda</option>
+                        <option value="Cinza">Cinza</option>
+                        <option value="Cinza/Amarela">Cinza/Amarela</option>
+                        <option value="Amarela">Amarela</option>
+                        <option value="Amarela/Laranja">Amarela/Laranja</option>
+                        <option value="Laranja">Laranja</option>
+                        <option value="Laranja/Verde">Laranja/Verde</option>
+                        <option value="Verde">Verde</option>
+                        <option value="Verde/Vermelha">Verde/Vermelha</option>
+                        <option value="Verde/Azul (Graduado)">Verde/Azul (Graduado)</option>
+                        <option value="Vermelho/Azul (Monitor)">Vermelho/Azul (Monitor)</option>
+                        <option value="Azul (Instrutor)">Azul (Instrutor)</option>
+                        <option value="Vermelho/Branco (Professor 1º Grau)">Vermelho/Branco (Professor 1º Grau)</option>
+                        <option value="Vermelho/Marrom (Professor 2º Grau)">Vermelho/Marrom (Professor 2º Grau)</option>
+                        <option value="Vermelho/Preto (Professor 3º Grau)">Vermelho/Preto (Professor 3º Grau)</option>
+                        <option value="Roxo (Contra-Mestre 1º Grau)">Roxo (Contra-Mestre 1º Grau)</option>
+                        <option value="Roxo/Marrom (Contra-Mestre 2º Grau)">Roxo/Marrom (Contra-Mestre 2º Grau)</option>
+                        <option value="Marrom (Contra-Mestre 3º Grau)">Marrom (Contra-Mestre 3º Grau)</option>
+                        <option value="Vermelha (Mestre 1º Grau)">Vermelha (Mestre 1º Grau)</option>
+                        <option value="Preta (Mestre 2º Grau)">Preta (Mestre 2º Grau)</option>
+                        <option value="Branca (Mestre 3º Grau)">Branca (Mestre 3º Grau)</option>
+                        <option value="Branco/Vinho (Mestre 4º Grau)">Branco/Vinho (Mestre 4º Grau)</option>
+                        <option value="Branco (Mestre)">Branco (Mestre)</option>
+                        <option value="Amarelo/Preto (Estagiário)">Amarelo/Preto (Estagiário)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </>

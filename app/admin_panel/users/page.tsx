@@ -35,6 +35,45 @@ const generateFileName = (ext: string) => {
   return `${Date.now()}-${Math.random()}.${ext}`;
 };
 
+const compressImageToDataURL = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 120;
+        const MAX_HEIGHT = 120;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
+      };
+      img.onerror = () => resolve('');
+    };
+    reader.onerror = () => resolve('');
+  });
+};
+
 function UsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const { user, isAdmin, loading } = useAuth();
@@ -61,23 +100,38 @@ function UsersPage() {
       }
 
       const file = e.target.files[0];
+      
+      // Compactar localmente no client (50ms) e definir de imediato!
+      const localBase64 = await compressImageToDataURL(file);
+      if (!localBase64) {
+        throw new Error('Erro ao processar imagem.');
+      }
+
+      setNewAvatarUrl(localBase64);
+
+      // Envia em segundo plano sem bloquear a interface de forma assíncrona
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = generateFileName(fileExt);
       const filePath = `members/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file)
+        .then((res: any) => {
+          const uploadError = res?.error;
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            setNewAvatarUrl(publicUrl);
+          }
+        })
+        .catch((storageErr: any) => {
+          console.warn("Silent storage upload error. Using instant base64:", storageErr);
+        });
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      setNewAvatarUrl(publicUrl);
     } catch (error: any) {
-      console.error('Erro no upload:', error);
+      console.error('Erro no upload rápido:', error);
       setError('Erro ao carregar foto: ' + error.message);
     } finally {
       setUploading(false);
@@ -87,7 +141,7 @@ function UsersPage() {
   const [newRole, setNewRole] = useState<'admin' | 'user'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<{id: string, username: string} | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{id: string, username: string, avatar_url?: string} | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -99,17 +153,22 @@ function UsersPage() {
   }, [success]);
 
   const fetchUsers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('username', { ascending: true });
+    if (!user) return;
+    
+    let query = supabase.from('users').select('*');
+    
+    if (user.role === 'director') {
+      query = query.eq('director_id', user.id);
+    }
+    
+    const { data, error } = await query.order('username', { ascending: true });
     
     if (error) {
       console.error("Erro ao buscar usuários:", error);
     } else {
       setUsers(data || []);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -148,16 +207,24 @@ function UsersPage() {
         throw new Error('Este nome de usuário já está em uso.');
       }
 
+      const insertPayload: any = {
+        username: newUsername.trim(),
+        password: newPassword,
+        phone: newPhone.trim(),
+        role: newRole,
+        graduation: newGraduation,
+        avatar_url: newAvatarUrl.trim()
+      };
+
+      if (user && user.role === 'director') {
+        insertPayload.director_id = user.id;
+        insertPayload.city = user.city;
+        insertPayload.country = user.country;
+      }
+
       const { error: insertError } = await supabase
         .from('users')
-        .insert({
-          username: newUsername.trim(),
-          password: newPassword,
-          phone: newPhone.trim(),
-          role: newRole,
-          graduation: newGraduation,
-          avatar_url: newAvatarUrl.trim()
-        });
+        .insert(insertPayload);
 
       if (insertError) throw insertError;
 
@@ -188,6 +255,8 @@ function UsersPage() {
     setError(null);
 
     try {
+      const oldAvatar = editingUser.avatar_url;
+
       const updateData: any = {
         username: newUsername.trim(),
         phone: newPhone.trim(),
@@ -206,6 +275,19 @@ function UsersPage() {
         .eq('id', editingUser.id);
 
       if (updateError) throw updateError;
+
+      // Se atualizou com sucesso e a foto mudou, exclui a foto antiga do storage para evitar acúmulo de arquivos órfãos
+      if (oldAvatar && oldAvatar !== newAvatarUrl.trim()) {
+        try {
+          const parts = oldAvatar.split('/public/avatars/');
+          if (parts.length > 1) {
+            const oldPath = decodeURIComponent(parts[1]);
+            await supabase.storage.from('avatars').remove([oldPath]);
+          }
+        } catch (storageErr) {
+          console.error("Erro ao deletar arquivo antigo do storage:", storageErr);
+        }
+      }
 
       setIsEditModalOpen(false);
       setEditingUser(null);
@@ -287,6 +369,19 @@ function UsersPage() {
 
       if (delError) {
         throw delError;
+      }
+
+      // Se o usuário possuía uma foto cadastrada, limpa ela também do bucket de armazenamento
+      if (userToDelete.avatar_url) {
+        try {
+          const parts = userToDelete.avatar_url.split('/public/avatars/');
+          if (parts.length > 1) {
+            const oldPath = decodeURIComponent(parts[1]);
+            await supabase.storage.from('avatars').remove([oldPath]);
+          }
+        } catch (storageErr) {
+          console.error("Erro ao deletar avatar do usuário excluído do storage:", storageErr);
+        }
       }
 
       setSuccess('Membro removido com sucesso!');
@@ -466,6 +561,34 @@ function UsersPage() {
                         />
                       </div>
                     </div>
+
+                    <div className="bg-[#121212] border border-[#222222] rounded-xl p-3 space-y-1.5 mt-1">
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-none">Avatares rápidos de Diretoria (Clique para escolher):</p>
+                      <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none">
+                        {[
+                          { name: 'Logo', url: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg' },
+                          { name: 'Leão', url: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=150&auto=format&fit=crop&q=60' },
+                          { name: 'Berimbau', url: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?w=150&auto=format&fit=crop&q=60' },
+                          { name: 'Diretor', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60' },
+                          { name: 'Diretora', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60' }
+                        ].map((preset, index) => (
+                          <button
+                            type="button"
+                            key={index}
+                            onClick={() => setNewAvatarUrl(preset.url)}
+                            className={cn(
+                              "relative w-9 h-9 rounded-full overflow-hidden shrink-0 border transition-all",
+                              newAvatarUrl === preset.url 
+                                ? "border-brand-red scale-110 shadow-[0_0_8px_rgba(211,47,47,0.4)]" 
+                                : "border-[#333333] opacity-60 hover:opacity-100"
+                            )}
+                            title={preset.name}
+                          >
+                            <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -604,6 +727,34 @@ function UsersPage() {
                           disabled={uploading}
                           className="hidden"
                         />
+                      </div>
+                    </div>
+
+                    <div className="bg-[#121212] border border-[#222222] rounded-xl p-3 space-y-1.5 mt-1">
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-none">Avatares rápidos de Diretoria (Clique para escolher):</p>
+                      <div className="flex items-center gap-2 overflow-x-auto py-0.5 scrollbar-none">
+                        {[
+                          { name: 'Logo', url: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg' },
+                          { name: 'Leão', url: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=150&auto=format&fit=crop&q=60' },
+                          { name: 'Berimbau', url: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?w=150&auto=format&fit=crop&q=60' },
+                          { name: 'Diretor', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60' },
+                          { name: 'Diretora', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60' }
+                        ].map((preset, index) => (
+                          <button
+                            type="button"
+                            key={index}
+                            onClick={() => setNewAvatarUrl(preset.url)}
+                            className={cn(
+                              "relative w-9 h-9 rounded-full overflow-hidden shrink-0 border transition-all",
+                              newAvatarUrl === preset.url 
+                                ? "border-brand-red scale-110 shadow-[0_0_8px_rgba(211,47,47,0.4)]" 
+                                : "border-[#333333] opacity-60 hover:opacity-100"
+                            )}
+                            title={preset.name}
+                          >
+                            <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -787,7 +938,7 @@ function UsersPage() {
                     </button>
                     <button 
                       onClick={() => {
-                        setUserToDelete({ id: u.id, username: u.username });
+                        setUserToDelete({ id: u.id, username: u.username, avatar_url: u.avatar_url });
                         setIsDeleting(true);
                       }}
                       disabled={submitting}
@@ -908,7 +1059,7 @@ function UsersPage() {
                           </button>
                           <button 
                             onClick={() => {
-                              setUserToDelete({ id: u.id, username: u.username });
+                              setUserToDelete({ id: u.id, username: u.username, avatar_url: u.avatar_url });
                               setIsDeleting(true);
                             }}
                             disabled={submitting}

@@ -12,7 +12,8 @@ import {
   Camera,
   CheckCircle2,
   AlertCircle,
-  ShieldAlert
+  ShieldAlert,
+  Wallet
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -29,6 +30,11 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [graduation, setGraduation] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
+  const [pixKey, setPixKey] = useState('');
+  const [pixName, setPixName] = useState('');
+  const [pixBank, setPixBank] = useState('');
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -38,6 +44,11 @@ export default function ProfilePage() {
       setPhone(user.phone || '');
       setGraduation(user.graduation || '');
       setAvatarUrl(user.avatar_url || '');
+      setCity(user.city || '');
+      setCountry(user.country || '');
+      setPixKey(user.pix_key || '');
+      setPixName(user.pix_name || '');
+      setPixBank(user.pix_bank || '');
     }
   }, [user]);
 
@@ -83,17 +94,37 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
+      const oldAvatar = user.avatar_url;
+
       const { error } = await supabase
         .from('users')
         .update({
           username,
           phone,
           graduation,
-          avatar_url: avatarUrl
+          avatar_url: avatarUrl,
+          city,
+          country,
+          pix_key: pixKey,
+          pix_name: pixName,
+          pix_bank: pixBank
         })
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Se atualizou com sucesso e a foto nova é diferente, remove o arquivo da foto antiga para evitar acumular fotos duplicadas
+      if (oldAvatar && oldAvatar !== avatarUrl) {
+        try {
+          const parts = oldAvatar.split('/public/avatars/');
+          if (parts.length > 1) {
+            const oldPath = decodeURIComponent(parts[1]);
+            await supabase.storage.from('avatars').remove([oldPath]);
+          }
+        } catch (storageErr) {
+          console.error("Erro ao deletar arquivo antigo do storage:", storageErr);
+        }
+      }
 
       await refreshUserData();
       setMessage({ type: 'success', text: 'Perfil administrativo atualizado!' });
@@ -245,6 +276,36 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Cidade da Região</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    <input 
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full bg-[#121212] border border-[#333333] rounded-2xl py-4 pl-12 pr-4 font-bold text-white outline-none focus:border-brand-red transition-all"
+                      placeholder="Ex: Garanhuns"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">UF / País</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    <input 
+                      type="text"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full bg-[#121212] border border-[#333333] rounded-2xl py-4 pl-12 pr-4 font-bold text-white outline-none focus:border-brand-red transition-all"
+                      placeholder="Ex: PE ou AL"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Graduação</label>
                 <div className="relative">
@@ -279,6 +340,54 @@ export default function ProfilePage() {
                      <option value="Branco (Mestre)">Branco (Mestre)</option>
                      <option value="Amarelo/Preto (Estagiário)">Amarelo/Preto (Estagiário)</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="bg-[#121212] border border-[#222222] rounded-3xl p-6 mt-6 space-y-4">
+                <div className="flex items-center gap-3 border-b border-[#222222] pb-3">
+                  <Wallet className="text-brand-red" size={20} />
+                  <p className="text-xs font-black uppercase tracking-widest text-[#FFF]">Configuração Regional de Pix</p>
+                </div>
+                
+                <p className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                  Defina os dados da chave Pix da sua de sua região/academia. Alunos vinculados à sua supervisão ou região visualizarão estes dados na tela de mensalidade/pagamento.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Chave Pix da Região</label>
+                    <input 
+                      type="text"
+                      value={pixKey}
+                      onChange={(e) => setPixKey(e.target.value)}
+                      className="w-full bg-[#1A1A1A] border border-[#333333] rounded-2xl py-4 px-4 font-mono font-bold text-white outline-none focus:border-brand-red transition-all text-xs"
+                      placeholder="Ex: CPF ou celular ou e-mail ou chave aleatória"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Titular da ContaRecebedor</label>
+                      <input 
+                        type="text"
+                        value={pixName}
+                        onChange={(e) => setPixName(e.target.value)}
+                        className="w-full bg-[#1A1A1A] border border-[#333333] rounded-2xl py-4 px-4 font-bold text-white outline-none focus:border-brand-red transition-all text-xs"
+                        placeholder="Ex: Mestre Bolacha"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-2">Instituição / Banco</label>
+                      <input 
+                        type="text"
+                        value={pixBank}
+                        onChange={(e) => setPixBank(e.target.value)}
+                        className="w-full bg-[#1A1A1A] border border-[#333333] rounded-2xl py-4 px-4 font-bold text-white outline-none focus:border-brand-red transition-all text-xs"
+                        placeholder="Ex: Nubank ou Itaú"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -128,6 +128,26 @@ BEGIN
         ALTER TABLE public.users ADD COLUMN avatar_url TEXT;
     END IF;
 
+    -- users: city, country, director_id, pix_key, pix_name, pix_bank
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='city') THEN
+        ALTER TABLE public.users ADD COLUMN city TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='country') THEN
+        ALTER TABLE public.users ADD COLUMN country TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='director_id') THEN
+        ALTER TABLE public.users ADD COLUMN director_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pix_key') THEN
+        ALTER TABLE public.users ADD COLUMN pix_key TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pix_name') THEN
+        ALTER TABLE public.users ADD COLUMN pix_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pix_bank') THEN
+        ALTER TABLE public.users ADD COLUMN pix_bank TEXT;
+    END IF;
+
     -- Criar bucket de avatars se não existir (Storage)
     -- Nota: Isso requer que a extensão de storage esteja habilitada
     INSERT INTO storage.buckets (id, name, public)

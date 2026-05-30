@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { generatePixPayload } from '@/lib/pix-utils';
 
 export default function PaymentsPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, refreshUserData } = useAuth();
   
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -32,45 +32,62 @@ export default function PaymentsPage() {
   }, [pixData.key, pixData.name]);
 
   const fetchPix = async () => {
+    if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from('config')
-        .select('*')
-        .eq('id', 'global')
-        .single();
-      
-      if (!error && data) {
-        setPixData({
-          key: data.pix_key || '',
-          name: data.pix_name || '',
-          bank: data.pix_bank || ''
-        });
+      let fetchedKey = '';
+      let fetchedName = '';
+      let fetchedBank = '';
+
+      if (user.role === 'director') {
+        fetchedKey = user.pix_key || '';
+        fetchedName = user.pix_name || '';
+        fetchedBank = user.pix_bank || '';
+      } else if (user.director_id) {
+        const { data: directorData, error: dirError } = await supabase
+          .from('users')
+          .select('pix_key, pix_name, pix_bank')
+          .eq('id', user.director_id)
+          .single();
+        
+        if (!dirError && directorData && directorData.pix_key) {
+          fetchedKey = directorData.pix_key;
+          fetchedName = directorData.pix_name || '';
+          fetchedBank = directorData.pix_bank || '';
+        }
       }
+
+      // Fallback global
+      if (!fetchedKey) {
+        const { data: config, error: configError } = await supabase
+          .from('config')
+          .select('*')
+          .eq('id', 'global')
+          .single();
+        
+        if (!configError && config) {
+          fetchedKey = config.pix_key || '';
+          fetchedName = config.pix_name || '';
+          fetchedBank = config.pix_bank || '';
+        }
+      }
+
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPixData({
+        key: fetchedKey,
+        name: fetchedName,
+        bank: fetchedBank
+      });
     } catch (err) {
-      console.error("Erro ao buscar config PIX:", err);
+      console.error("Erro ao buscar config PIX para região:", err);
     }
   };
 
   useEffect(() => {
-    const init = async () => {
-      await fetchPix();
-    };
-    init();
-
-    const channel = supabase.channel('pix_config')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'config', filter: 'id=eq.global' }, (payload: any) => {
-        setPixData({
-          key: payload.new.pix_key || '',
-          name: payload.new.pix_name || '',
-          bank: payload.new.pix_bank || ''
-        });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+    if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchPix();
+    }
+  }, [user]);
 
   const handleCopy = () => {
     if (!pixPayload) return;
@@ -188,20 +205,43 @@ export default function PaymentsPage() {
                       onChange={e => setPixData({...pixData, bank: e.target.value})}
                       className="w-full bg-[#121212] border border-[#333333] rounded-xl p-4 text-white outline-none focus:border-brand-red text-xs font-bold"
                     />
-                    <button 
-                      onClick={async () => {
-                        const { error } = await supabase.from('config').upsert({
-                          id: 'global',
-                          pix_key: pixData.key,
-                          pix_name: pixData.name,
-                          pix_bank: pixData.bank
-                        });
-                        if (!error) alert('Configurações PIX salvas!');
-                      }}
-                      className="w-full bg-white text-black py-4 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-red hover:text-white transition-all shadow-xl"
-                    >
-                      SALVAR ALTERAÇÕES
-                    </button>
+                          <button 
+                            onClick={async () => {
+                              try {
+                                if (user?.role === 'director') {
+                                  const { error } = await supabase
+                                    .from('users')
+                                    .update({
+                                      pix_key: pixData.key,
+                                      pix_name: pixData.name,
+                                      pix_bank: pixData.bank
+                                    })
+                                    .eq('id', user.id);
+                                  
+                                  if (error) throw error;
+                                  await refreshUserData();
+                                  alert('Dados PIX da sua região salvos com sucesso!');
+                                } else {
+                                  // Admin (Bolacha) saves globally
+                                  const { error } = await supabase.from('config').upsert({
+                                    id: 'global',
+                                    pix_key: pixData.key,
+                                    pix_name: pixData.name,
+                                    pix_bank: pixData.bank
+                                  }, { onConflict: 'id' });
+                                  
+                                  if (error) throw error;
+                                  alert('Configurações PIX globais salvas com sucesso!');
+                                }
+                              } catch (err: any) {
+                                console.error("Erro ao salvar PIX:", err);
+                                alert('Erro ao salvar: ' + (err.message || String(err)));
+                              }
+                            }}
+                            className="w-full bg-white text-black py-4 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-red hover:text-white transition-all shadow-xl"
+                          >
+                            SALVAR ALTERAÇÕES
+                          </button>
                   </div>
                 </div>
               )}

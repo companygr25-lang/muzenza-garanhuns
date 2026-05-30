@@ -80,22 +80,24 @@ export default function Settings() {
           pix_name: pixName,
           pix_bank: pixBank,
           highlighted_event_id: highlightedEventId
-        });
+        }, { onConflict: 'id' });
 
       if (error) throw error;
       alert("Configurações salvas!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar config:", error);
+      alert("Erro ao salvar: " + (error.message || String(error)));
     } finally {
       setSaving(false);
     }
   }
 
-  if (!isAdmin) {
+  if (user?.role !== 'admin') {
     return (
       <div className="py-20 text-center opacity-40">
         <ShieldAlert size={64} className="mx-auto mb-4" />
         <h2 className="text-2xl font-black">ACESSO NEGADO</h2>
+        <p className="text-xs uppercase font-bold tracking-widest mt-2">Esta página é restrita para o Administrador Geral (Mestre Bolacha).</p>
       </div>
     );
   }

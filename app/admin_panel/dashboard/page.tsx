@@ -9,6 +9,8 @@ import {
   Calendar, 
   TrendingUp, 
   AlertTriangle,
+  CheckCircle,
+  Trophy,
   Pencil,
   Save
 } from 'lucide-react';
@@ -20,7 +22,8 @@ export default function DashboardPage() {
     activeMembers: 0,
     pendingPayments: 0,
     confirmedPayments: 0,
-    openEvents: 0
+    openEvents: 0,
+    treasuryTotal: 0
   });
 
   const [pixKey, setPixKey] = useState<string>('');
@@ -30,6 +33,12 @@ export default function DashboardPage() {
 
   const fetchConfig = async () => {
     try {
+      if (user?.role === 'director') {
+        setPixKey(user.pix_key || '');
+        setPurpose(`Painel de gestão regional do Grupo Muzenza - Região: ${user.city || 'Sua Cidade'}. Gerencie alunos, registre presenças, crie eventos regionais ou modifique seus dados de recebimento Pix.`);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('config')
         .select('*')
@@ -57,27 +66,56 @@ export default function DashboardPage() {
   };
 
   const fetchStats = async () => {
+    if (!user) return;
     try {
-      const { count: userCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true });
-      
-      const { count: eventCount } = await supabase
-        .from('events')
-        .select('*', { count: 'exact', head: true });
+      let userQuery = supabase.from('users').select('*', { count: 'exact', head: true });
+      let eventQuery = supabase.from('events').select('*', { count: 'exact', head: true });
+      let pendingQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', false).not('username', 'ilike', 'BOLACHA');
+      let confirmedQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', true).not('username', 'ilike', 'BOLACHA');
+      let treasuryQuery = supabase.from('treasury_contributions').select('amount').eq('status', 'approved');
+
+      if (user.role === 'director') {
+        userQuery = userQuery.eq('director_id', user.id);
+        eventQuery = eventQuery.or(`director_id.eq.${user.id},director_id.is.null`);
+        pendingQuery = pendingQuery.eq('director_id', user.id);
+        confirmedQuery = confirmedQuery.eq('director_id', user.id);
+        treasuryQuery = treasuryQuery.eq('director_id', user.id);
+      }
+
+      const { count: userCount } = await userQuery;
+      const { count: eventCount } = await eventQuery;
+      const { count: pendingCount } = await pendingQuery;
+      const { count: confirmedCount } = await confirmedQuery;
+
+      // Fetch treasury contributions approved
+      let totalTreasury = 0;
+      try {
+        const { data: treasuryData, error: tErr } = await treasuryQuery;
         
-      // Fetch pending payments (excluding BOLACHA)
-      const { count: pendingCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .eq('monthly_paid', false)
-        .not('username', 'ilike', 'BOLACHA');
+        if (!tErr && treasuryData) {
+          totalTreasury = treasuryData.reduce((sum: number, c: any) => sum + Number(c.amount), 0);
+        } else {
+          // If error/table missing (handled gracefully), check local fallback
+          if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('muzenza_local_treasury');
+            if (saved) {
+              const fallbackData = JSON.parse(saved);
+              totalTreasury = fallbackData
+                .filter((c: any) => c.status === 'approved' && (user.role !== 'director' || c.director_id === user.id))
+                .reduce((sum: number, c: any) => sum + Number(c.amount), 0);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Erro ao buscar tesouraria, usando 0:", e);
+      }
 
       setStats({
         activeMembers: userCount || 0,
         pendingPayments: pendingCount || 0,
-        confirmedPayments: 0,
-        openEvents: eventCount || 0
+        confirmedPayments: confirmedCount || 0,
+        openEvents: eventCount || 0,
+        treasuryTotal: totalTreasury
       });
     } catch (err) {
       console.error("Erro ao buscar stats:", err);
@@ -85,6 +123,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    if (!user) return;
+
     const init = async () => {
       await Promise.all([
         fetchConfig(),
@@ -109,12 +149,13 @@ export default function DashboardPage() {
       supabase.removeChannel(usersChannel);
       supabase.removeChannel(eventsChannel);
     };
-  }, [isAdmin]);
+  }, [user]);
 
   const statCards = [
-    { label: 'Membros Ativos', value: stats.activeMembers, color: '#D32F2F', icon: Users, trend: 'Total cadastrado' },
-    { label: 'Mensalidade Pendente', value: stats.pendingPayments, color: '#D32F2F', icon: AlertTriangle, trend: 'Atenção necessária' },
-    { label: 'Eventos Abertos', value: stats.openEvents, color: '#22c55e', icon: Calendar, trend: 'Disponíveis' },
+    { label: 'Membros Ativos', value: stats.activeMembers.toString(), color: '#D32F2F', icon: Users, trend: 'Total cadastrado' },
+    { label: 'Mensalidades OK', value: stats.confirmedPayments.toString(), color: '#22c55e', icon: CheckCircle, trend: 'Contribuintes em dia' },
+    { label: 'Pendentes Dues', value: stats.pendingPayments.toString(), color: '#fbbf24', icon: AlertTriangle, trend: 'Atenção necessária' },
+    { label: 'Caixa Tesouraria', value: `R$ ${stats.treasuryTotal.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#38bdf8', icon: Trophy, trend: 'Apoio voluntário arrecadado' },
   ];
 
   return (

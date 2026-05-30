@@ -25,13 +25,15 @@ import { cn } from '@/lib/utils';
 
 export const Sidebar = React.memo(function Sidebar({ 
   mobileOpen, 
-  setMobileOpen 
+  setMobileOpen,
+  onOpenManual
 }: { 
   mobileOpen?: boolean, 
-  setMobileOpen?: (val: boolean) => void 
+  setMobileOpen?: (val: boolean) => void,
+  onOpenManual?: () => void
 }) {
   const pathname = usePathname();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, logout, appConfig } = useAuth();
   const [isOpen, setIsOpen] = React.useState(true);
   const [internalMobileOpen, setInternalMobileOpen] = React.useState(false);
 
@@ -52,7 +54,9 @@ export const Sidebar = React.memo(function Sidebar({
     { name: 'Loja', href: '/admin_panel/store', icon: ShoppingBag, adminOnly: false },
     { name: 'Regras', href: '/admin_panel/rules', icon: ShieldCheck, adminOnly: false },
     { name: 'Pagamentos', href: '/admin_panel/payments', icon: CreditCard, adminOnly: false },
+    { name: 'Tesouraria', href: '/admin_panel/treasury', icon: Trophy, adminOnly: false },
     { name: 'Configurações', href: '/admin_panel/settings', icon: Settings, adminOnly: true },
+    { name: 'Guia Prático', href: '#manual', icon: ClipboardCheck, adminOnly: false },
   ], [isAdmin]);
 
   const filteredItems = React.useMemo(() => {
@@ -84,7 +88,7 @@ export const Sidebar = React.memo(function Sidebar({
           <Link href="/" className="flex flex-col items-center gap-2 overflow-hidden" prefetch={false}>
             <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-[0_0_20px_rgba(211,47,47,0.2)]">
               <img 
-                src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
+                src={appConfig?.logoUrl} 
                 alt="MUZENZA Logo" 
                 className="w-full h-full object-cover"
               />
@@ -96,7 +100,9 @@ export const Sidebar = React.memo(function Sidebar({
                 className="text-center"
               >
                  <h1 className="text-xl font-black tracking-tighter text-brand-red leading-none">MUZENZA</h1>
-                 <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Garanhuns - PE</span>
+                 <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+                   {(appConfig?.cityName || 'GARANHUNS').toUpperCase()} - {(appConfig?.countryName || 'PE').toUpperCase()}
+                 </span>
               </motion.div>
             )}
           </Link>
@@ -108,6 +114,12 @@ export const Sidebar = React.memo(function Sidebar({
               key={item.href}
               href={item.href}
               prefetch={false}
+              onClick={(e) => {
+                if (item.href === '#manual') {
+                  e.preventDefault();
+                  if (onOpenManual) onOpenManual();
+                }
+              }}
               className={cn(
                 "flex items-center gap-3 px-6 py-3 transition-all group relative",
                 pathname === item.href 
@@ -184,12 +196,17 @@ export const Sidebar = React.memo(function Sidebar({
                  <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white">
                       <img 
-                        src="https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg" 
+                        src={appConfig?.logoUrl} 
                         alt="Logo" 
                         className="w-full h-full object-cover"
                       />
                    </div>
-                   <h1 className="text-lg font-black tracking-tighter text-brand-red">MUZENZA</h1>
+                   <div>
+                     <h1 className="text-lg font-black tracking-tighter text-brand-red leading-none">MUZENZA</h1>
+                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mt-0.5">
+                       {(appConfig?.cityName || 'GARANHUNS').toUpperCase()} - {(appConfig?.countryName || 'PE').toUpperCase()}
+                     </span>
+                   </div>
                  </div>
                  <button onClick={toggleMobile} className="p-2 text-gray-500 hover:text-white">
                    <X size={24} />
@@ -201,7 +218,13 @@ export const Sidebar = React.memo(function Sidebar({
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={toggleMobile}
+                    onClick={(e) => {
+                      if (item.href === '#manual') {
+                        e.preventDefault();
+                        if (onOpenManual) onOpenManual();
+                      }
+                      toggleMobile();
+                    }}
                     className={cn(
                       "flex items-center gap-4 p-4 rounded-xl transition-all font-bold tracking-tight",
                       pathname === item.href 
