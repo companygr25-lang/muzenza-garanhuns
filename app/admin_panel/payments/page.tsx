@@ -105,13 +105,13 @@ export default function PaymentsPage() {
           </div>
           <div className="flex items-center gap-4">
              <div className="bg-brand-red/10 p-4 border border-brand-red/20 rounded-xl w-full md:w-auto">
-               <p className="text-[10px] text-brand-red uppercase font-black tracking-widest mb-1">Situação Financeira</p>
-               <p className={cn(
-                 "text-sm font-black italic tracking-tight",
-                 user?.monthly_paid ? "text-green-500" : "text-red-500"
-               )}>
-                 {user?.monthly_paid ? "MENSALIDADE OK" : "PENDÊNCIA DETECTADA"}
-               </p>
+                <p className="text-[10px] text-brand-red uppercase font-black tracking-widest mb-1">Situação Financeira</p>
+                <p className={cn(
+                  "text-sm font-black italic tracking-tight",
+                  (user?.monthly_paid || user?.role === 'director' || user?.role === 'admin' || user?.username?.toUpperCase() === 'BOLACHA') ? "text-green-500" : "text-red-500"
+                )}>
+                  {(user?.role === 'director' || user?.role === 'admin' || user?.username?.toUpperCase() === 'BOLACHA') ? "ACESSO VITALÍCIO" : (user?.monthly_paid ? "MENSALIDADE OK" : "PENDÊNCIA DETECTADA")}
+                </p>
              </div>
           </div>
         </div>

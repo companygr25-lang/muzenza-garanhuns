@@ -70,8 +70,8 @@ export default function DashboardPage() {
     try {
       let userQuery = supabase.from('users').select('*', { count: 'exact', head: true });
       let eventQuery = supabase.from('events').select('*', { count: 'exact', head: true });
-      let pendingQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', false).not('username', 'ilike', 'BOLACHA');
-      let confirmedQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', true).not('username', 'ilike', 'BOLACHA');
+      let pendingQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', false).eq('role', 'user').neq('username', 'BOLACHA');
+      let confirmedQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', true).eq('role', 'user').neq('username', 'BOLACHA');
       let treasuryQuery = supabase.from('treasury_contributions').select('amount').eq('status', 'approved');
 
       if (user.role === 'director') {

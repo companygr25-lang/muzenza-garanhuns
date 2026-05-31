@@ -72,6 +72,9 @@ export default function UserDashboard() {
      );
   }
 
+  const isDirector = user?.role === 'director' || user?.role === 'admin' || user?.username?.toUpperCase() === 'BOLACHA';
+  const hasAcessoValido = user?.monthly_paid || isDirector;
+
   return (
     <div className="space-y-12 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -84,16 +87,16 @@ export default function UserDashboard() {
           animate={{ x: 0, opacity: 1 }}
           className={cn(
             "flex items-center gap-5 px-8 py-5 rounded-2xl border-l-[6px] shadow-2xl backdrop-blur-xl transition-all",
-            user?.monthly_paid ? "bg-green-600/10 border-green-600" : "bg-brand-red/10 border-brand-red"
+            hasAcessoValido ? "bg-green-600/10 border-green-600" : "bg-brand-red/10 border-brand-red"
           )}
         >
-          <div className={cn("p-3 rounded-xl shadow-lg", user?.monthly_paid ? "bg-green-600 text-white" : "bg-brand-red text-white")}>
-            {user?.monthly_paid ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+          <div className={cn("p-3 rounded-xl shadow-lg", hasAcessoValido ? "bg-green-600 text-white" : "bg-brand-red text-white")}>
+            {hasAcessoValido ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
           </div>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Status Mensalidade</p>
             <p className="text-xl font-black italic uppercase tracking-tighter text-white">
-              {user?.monthly_paid ? 'PAGA / EM DIA' : 'PENDENTE'}
+              {isDirector ? 'ACESSO VITALÍCIO' : (user?.monthly_paid ? 'PAGA / EM DIA' : 'PENDENTE')}
             </p>
           </div>
         </motion.div>

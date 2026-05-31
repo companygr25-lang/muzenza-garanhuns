@@ -24,7 +24,7 @@ import { useRouter } from 'next/navigation';
 interface UserProfile {
   id: string;
   username: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'director';
   phone?: string;
   monthly_paid?: boolean;
   graduation?: string;
@@ -138,7 +138,7 @@ function UsersPage() {
     }
   };
 
-  const [newRole, setNewRole] = useState<'admin' | 'user'>('user');
+  const [newRole, setNewRole] = useState<'admin' | 'user' | 'director'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{id: string, username: string, avatar_url?: string} | null>(null);
@@ -196,12 +196,24 @@ function UsersPage() {
     setError(null);
 
     try {
-      // Check if username already exists
-      const { data: existing } = await supabase
+      // Check if username already exists - Primary high speed exact match
+      const { data: existingExact } = await supabase
         .from('users')
         .select('id')
-        .ilike('username', newUsername.trim())
+        .eq('username', newUsername.trim())
         .maybeSingle();
+
+      let existing = existingExact;
+
+      if (!existing) {
+        // Fallback for case-insensitive checks
+        const { data: existingIlike } = await supabase
+          .from('users')
+          .select('id')
+          .ilike('username', newUsername.trim())
+          .maybeSingle();
+        existing = existingIlike;
+      }
 
       if (existing) {
         throw new Error('Este nome de usuário já está em uso.');
@@ -396,9 +408,11 @@ function UsersPage() {
     }
   };
 
-  const filteredUsers = React.useMemo(() => users.filter(u => 
-    u.username.toLowerCase().includes(search.toLowerCase())
-  ), [users, search]);
+  const filteredUsers = React.useMemo(() => users.filter(u => {
+    const isUAdmin = u.role === 'admin' || u.role === 'director' || u.username.toUpperCase() === 'BOLACHA';
+    if (isUAdmin) return false;
+    return u.username.toLowerCase().includes(search.toLowerCase());
+  }), [users, search]);
 
   const graduations = [
     'Sem Corda',

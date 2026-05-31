@@ -222,13 +222,28 @@ export default function LandingPage() {
 
     try {
       if (isLogin) {
-        // Custom login logic using 'users' table
-        const { data, error: signInError } = await supabase
+        // Custom login logic using 'users' table - Primary tries index-friendly exact match
+        let { data, error: signInError } = await supabase
           .from('users')
           .select('*')
-          .ilike('username', username.trim())
+          .eq('username', username.trim())
           .eq('password', password)
           .single();
+
+        // If not found, fall back to case-insensitive ilike query (utilizes index scan when exact match is typed, with safe fallback)
+        if (signInError || !data) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('username', username.trim())
+            .eq('password', password)
+            .single();
+          
+          if (!fallbackError && fallbackData) {
+            data = fallbackData;
+            signInError = null;
+          }
+        }
 
         if (signInError || !data) {
           // Segurança Extra: Se for o usuario BOLACHA, tentamos forçar o login se as credenciais baterem mas o banco falhar por algum motivo de sync
@@ -445,52 +460,7 @@ export default function LandingPage() {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-6">
-            {isLogin && (
-              <div className="space-y-3 animate-fade-in">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Selecione sua Cidade / Região</label>
-                <div className="relative">
-                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-                  <select
-                    value={selectedDirectorId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setSelectedDirectorId(id);
-                      if (!id) {
-                        const config = {
-                          logoUrl: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
-                          cityName: 'GARANHUNS',
-                          countryName: 'PE'
-                        };
-                        setAppConfig(config);
-                        localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
-                      } else {
-                        const d = directors.find(dir => dir.id === id);
-                        if (d) {
-                          const config = {
-                            logoUrl: d.avatar_url || 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
-                            cityName: d.city || 'Desconhecido',
-                            countryName: d.country || 'PE'
-                          };
-                          setAppConfig(config);
-                          localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
-                        }
-                      }
-                    }}
-                    className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 pl-14 pr-10 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none cursor-pointer text-sm"
-                  >
-                    <option value="">Matriz Garanhuns (Bolacha) • GARANHUNS - PE</option>
-                    {directors.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.username.toUpperCase()} • {(d.city || 'Desconhecido').toUpperCase()} - {(d.country || 'PE').toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-[8px]">
-                    ▼
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Usuário</label>
@@ -662,18 +632,41 @@ export default function LandingPage() {
                     </>
                   ) : (
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Diretor / Equipe</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 px-1">Selecione sua Cidade / Região</label>
                       <div className="relative">
                         <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
                         <select
                           value={selectedDirectorId}
-                          onChange={(e) => setSelectedDirectorId(e.target.value)}
+                          onChange={(e) => {
+                            const id = e.target.value;
+                            setSelectedDirectorId(id);
+                            if (!id) {
+                              const config = {
+                                logoUrl: 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
+                                cityName: 'GARANHUNS',
+                                countryName: 'PE'
+                              };
+                              setAppConfig(config);
+                              localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
+                            } else {
+                              const d = directors.find(dir => dir.id === id);
+                              if (d) {
+                                const config = {
+                                  logoUrl: d.avatar_url || 'https://i.postimg.cc/cC1K9y97/Whats-App-Image-2026-05-14-at-12-55-48.jpg',
+                                  cityName: d.city || 'Desconhecido',
+                                  countryName: d.country || 'PE'
+                                };
+                                setAppConfig(config);
+                                localStorage.setItem('muzenza_visitor_config', JSON.stringify(config));
+                              }
+                            }
+                          }}
                           className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
                         >
-                          <option value="">Matriz Garanhuns (Mestre Bolacha) • PE, Brasil</option>
+                          <option value="">GARANHUNS - PE</option>
                           {directors.map((d) => (
                             <option key={d.id} value={d.id}>
-                              {d.username.toUpperCase()} • {d.city || 'Desconhecido'}, {d.country || 'Desconhecido'}
+                              {(d.city || 'Desconhecido').toUpperCase()} - {(d.country || 'PE').toUpperCase()}
                             </option>
                           ))}
                         </select>
