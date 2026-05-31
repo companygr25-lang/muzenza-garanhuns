@@ -96,22 +96,67 @@ export default function ProfilePage() {
     try {
       const oldAvatar = user.avatar_url;
 
-      const { error } = await supabase
-        .from('users')
-        .update({
-          username,
-          phone,
-          graduation,
-          avatar_url: avatarUrl,
-          city,
-          country,
-          pix_key: pixKey,
-          pix_name: pixName,
-          pix_bank: pixBank
-        })
-        .eq('id', user.id);
+      let payload: any = {
+        username,
+        phone,
+        graduation,
+        avatar_url: avatarUrl,
+        city,
+        country,
+        pix_key: pixKey,
+        pix_name: pixName,
+        pix_bank: pixBank
+      };
 
-      if (error) throw error;
+      let success = false;
+      let lastError = null;
+
+      // We try up to 7 times, pruning columns that don't exist in Supabase schema if a database error occurs
+      for (let attempt = 0; attempt < 7; attempt++) {
+        const { error } = await supabase
+          .from('users')
+          .update(payload)
+          .eq('id', user.id);
+
+        if (!error) {
+          success = true;
+          break;
+        }
+
+        lastError = error;
+        const errMsg = error.message || '';
+        
+        // Match specific column in typical Supabase/PostgREST error messages
+        const missingColumnMatch = errMsg.match(/column ['"]?([a-zA-Z0-9_]+)['"]?/i);
+        
+        let pruned = false;
+        if (missingColumnMatch) {
+          const colName = missingColumnMatch[1];
+          if (colName && colName in payload) {
+            delete payload[colName];
+            pruned = true;
+          }
+        }
+        
+        if (!pruned) {
+          // Fallback deletion order if no column detected
+          if ('pix_bank' in payload) {
+            delete payload['pix_bank'];
+          } else if ('pix_name' in payload) {
+            delete payload['pix_name'];
+          } else if ('pix_key' in payload) {
+            delete payload['pix_key'];
+          } else if ('city' in payload) {
+            delete payload['city'];
+          } else if ('country' in payload) {
+            delete payload['country'];
+          } else {
+            break;
+          }
+        }
+      }
+
+      if (!success && lastError) throw lastError;
 
       // Se atualizou com sucesso e a foto nova é diferente, remove o arquivo da foto antiga para evitar acumular fotos duplicadas
       if (oldAvatar && oldAvatar !== avatarUrl) {

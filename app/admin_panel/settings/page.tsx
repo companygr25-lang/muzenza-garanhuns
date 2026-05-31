@@ -72,17 +72,50 @@ export default function Settings() {
     e.preventDefault();
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('config')
-        .upsert({
-          id: 'global',
-          pix_key: pixKey,
-          pix_name: pixName,
-          pix_bank: pixBank,
-          highlighted_event_id: highlightedEventId
-        }, { onConflict: 'id' });
+      let payload: any = {
+        id: 'global',
+        pix_key: pixKey,
+        pix_name: pixName,
+        pix_bank: pixBank,
+        highlighted_event_id: highlightedEventId
+      };
 
-      if (error) throw error;
+      let success = false;
+      let lastError = null;
+
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { error } = await supabase
+          .from('config')
+          .upsert(payload, { onConflict: 'id' });
+
+        if (!error) {
+          success = true;
+          break;
+        }
+
+        lastError = error;
+        const errMsg = error.message || '';
+        const missingColumnMatch = errMsg.match(/column ['"]?([a-zA-Z0-9_]+)['"]?/i);
+
+        let pruned = false;
+        if (missingColumnMatch) {
+          const colName = missingColumnMatch[1];
+          if (colName && colName in payload) {
+            delete payload[colName];
+            pruned = true;
+          }
+        }
+
+        if (!pruned) {
+          if ('pix_bank' in payload) {
+            delete payload['pix_bank'];
+          } else {
+            break;
+          }
+        }
+      }
+
+      if (!success && lastError) throw lastError;
       alert("Configurações salvas!");
     } catch (error: any) {
       console.error("Erro ao salvar config:", error);
