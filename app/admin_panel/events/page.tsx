@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-provider';
+import { playNotificationSound } from '@/lib/sound';
 import { 
   Calendar, 
   MapPin, 
@@ -83,6 +84,7 @@ export default function EventsPage() {
     const eventsChannel = supabase.channel('realtime_events')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
         fetchEvents();
+        playNotificationSound();
       })
       .subscribe();
 
@@ -123,6 +125,7 @@ export default function EventsPage() {
       setShowAdd(false);
       // Wait for fetch to ensure local state is updated even if realtime is slightly delayed
       await fetchEvents();
+      playNotificationSound();
       alert('Evento publicado com sucesso!');
     } catch (error: any) {
       console.error("Erro ao criar evento:", error);
@@ -147,6 +150,7 @@ export default function EventsPage() {
       
       await fetchEvents();
       setItemToDelete(null);
+      playNotificationSound();
       alert('Evento excluído com sucesso!');
     } catch (error: any) {
       console.error("Erro detalhado ao deletar evento:", error);
@@ -188,6 +192,7 @@ export default function EventsPage() {
       setIsEditModalOpen(false);
       setEditingEvent(null);
       await fetchEvents();
+      playNotificationSound();
       alert('Evento atualizado com sucesso!');
     } catch (error: any) {
       console.error("Erro ao atualizar evento:", error);

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { supabase } from '@/lib/supabase';
+import { playNotificationSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 import { 
   Calendar, 
@@ -62,6 +63,26 @@ export default function UserDashboard() {
     }
 
     fetchData();
+
+    // Set up realtime channels for updates on Events, Store items, or Config rules
+    const dashboardChannel = supabase.channel('realtime_dashboard_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        fetchData();
+        playNotificationSound();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'store_items' }, () => {
+        fetchData();
+        playNotificationSound();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'config', filter: 'id=eq.global' }, () => {
+        fetchData();
+        playNotificationSound();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(dashboardChannel);
+    };
   }, []);
 
   if (loading) {

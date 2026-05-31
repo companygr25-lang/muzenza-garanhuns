@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-provider';
+import { playNotificationSound } from '@/lib/sound';
 import { 
   ShoppingBag, 
   Plus, 
@@ -65,6 +66,7 @@ const StorePage = () => {
     const channel = supabase.channel('realtime_products')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'store_items' }, () => {
         fetchProducts(); // Removed delay
+        playNotificationSound();
       })
       .subscribe();
 
@@ -95,6 +97,7 @@ const StorePage = () => {
       setShowAdd(false);
       // Immediate fetch
       await fetchProducts();
+      playNotificationSound();
       alert('Produto cadastrado com sucesso!');
     } catch (error: any) {
       console.error("Erro ao criar produto:", error);
@@ -112,6 +115,7 @@ const StorePage = () => {
       if (error) throw error;
       // Immediate fetch for fallback
       fetchProducts();
+      playNotificationSound();
     } catch (error) {
        console.error("Erro ao atualizar estoque:", error);
     }
@@ -134,6 +138,7 @@ const StorePage = () => {
       
       await fetchProducts();
       setItemToDelete(null);
+      playNotificationSound();
       alert('Item excluído com sucesso!');
     } catch (error: any) {
       console.error("Erro detalhado ao deletar produto:", error);
@@ -163,6 +168,7 @@ const StorePage = () => {
       setIsEditModalOpen(false);
       setEditingProduct(null);
       fetchProducts();
+      playNotificationSound();
       alert('Produto atualizado com sucesso!');
     } catch (error: any) {
       console.error("Erro ao atualizar produto:", error);

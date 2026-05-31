@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { supabase } from '@/lib/supabase';
+import { playNotificationSound } from '@/lib/sound';
 import { 
   FileText, 
   Save, 
@@ -61,6 +62,7 @@ export default function RulesPage() {
       
       if (error) throw error;
       setEditing(false);
+      playNotificationSound();
       alert('Regras atualizadas com sucesso!');
     } catch (err) {
       console.error("Erro ao salvar regras:", err);
