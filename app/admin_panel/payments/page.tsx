@@ -38,15 +38,34 @@ export default function PaymentsPage() {
       let fetchedName = '';
       let fetchedBank = '';
 
+      let directorId = '';
       if (user.role === 'director') {
-        fetchedKey = user.pix_key || '';
-        fetchedName = user.pix_name || '';
-        fetchedBank = user.pix_bank || '';
+        directorId = user.id;
       } else if (user.director_id) {
+        directorId = user.director_id;
+      }
+
+      if (directorId) {
+        // Try fetching custom director config
+        const { data: dirConfig, error: dirError } = await supabase
+          .from('config')
+          .select('pix_key, pix_name, pix_bank')
+          .eq('id', directorId)
+          .single();
+        
+        if (!dirError && dirConfig && dirConfig.pix_key) {
+          fetchedKey = dirConfig.pix_key;
+          fetchedName = dirConfig.pix_name || '';
+          fetchedBank = dirConfig.pix_bank || '';
+        }
+      }
+
+      // Fallback user profile fields
+      if (!fetchedKey && directorId) {
         const { data: directorData, error: dirError } = await supabase
           .from('users')
           .select('pix_key, pix_name, pix_bank')
-          .eq('id', user.director_id)
+          .eq('id', directorId)
           .single();
         
         if (!dirError && directorData && directorData.pix_key) {
@@ -56,8 +75,8 @@ export default function PaymentsPage() {
         }
       }
 
-      // Fallback global
-      if (!fetchedKey) {
+      // Fallback global settings only if the user is not regional (no director ID associated)
+      if (!fetchedKey && !directorId) {
         const { data: config, error: configError } = await supabase
           .from('config')
           .select('*')
@@ -121,7 +140,7 @@ export default function PaymentsPage() {
           <motion.div 
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="bg-[#1E1E1E] p-12 rounded-3xl border border-[#333333] shadow-2xl space-y-10 border-l-8 border-brand-red"
+            className="bg-[#1E1E1E] p-5 sm:p-8 md:p-12 rounded-3xl border border-[#333333] shadow-2xl space-y-10 border-l-8 border-brand-red"
           >
             <div className="flex items-center gap-4 mb-4">
                <div className="p-4 bg-brand-red/10 rounded-2xl text-brand-red">
@@ -209,14 +228,15 @@ export default function PaymentsPage() {
                             onClick={async () => {
                               try {
                                 if (user?.role === 'director') {
+                                  // Use the config table under director's own ID to bypass users table schema limits
                                   const { error } = await supabase
-                                    .from('users')
-                                    .update({
+                                    .from('config')
+                                    .upsert({
+                                      id: user.id,
                                       pix_key: pixData.key,
                                       pix_name: pixData.name,
                                       pix_bank: pixData.bank
-                                    })
-                                    .eq('id', user.id);
+                                    }, { onConflict: 'id' });
                                   
                                   if (error) throw error;
                                   await refreshUserData();
@@ -262,7 +282,7 @@ export default function PaymentsPage() {
             animate={{ x: 0, opacity: 1 }}
             className="space-y-8"
           >
-            <div className="bg-[#1E1E1E] p-10 rounded-3xl border border-[#333333] shadow-2xl relative overflow-hidden group">
+            <div className="bg-[#1E1E1E] p-5 sm:p-8 md:p-10 rounded-3xl border border-[#333333] shadow-2xl relative overflow-hidden group">
                <TrendingUp className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:text-brand-red/5 transition-colors" />
                <h3 className="text-xl font-black italic tracking-tighter uppercase mb-6 flex items-center gap-3">
                  <AlertCircle size={24} className="text-brand-red" />
@@ -285,7 +305,7 @@ export default function PaymentsPage() {
                </ul>
             </div>
 
-            <div className="bg-[#1E1E1E] p-10 rounded-3xl border border-[#333333] shadow-2xl">
+            <div className="bg-[#1E1E1E] p-5 sm:p-8 md:p-10 rounded-3xl border border-[#333333] shadow-2xl">
                <h3 className="text-xl font-black italic tracking-tighter uppercase mb-6">Últimos Pagamentos</h3>
                <div className="space-y-4">
                   {[

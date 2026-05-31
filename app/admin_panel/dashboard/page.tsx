@@ -33,18 +33,20 @@ export default function DashboardPage() {
 
   const fetchConfig = async () => {
     try {
-      if (user?.role === 'director') {
-        setPixKey(user.pix_key || '');
-        setPurpose(`Painel de gestão regional do Grupo Muzenza - Região: ${user.city || 'Sua Cidade'}. Gerencie alunos, registre presenças, crie eventos regionais ou modifique seus dados de recebimento Pix.`);
-        return;
-      }
-
+      const configId = user?.role === 'director' ? user.id : 'global';
       const { data, error } = await supabase
         .from('config')
         .select('*')
-        .eq('id', 'global')
+        .eq('id', configId)
         .single();
       
+      if (user?.role === 'director') {
+        const customPurpose = data?.purpose || `Painel de gestão regional do Grupo Muzenza - Região: ${user.city || 'Sua Cidade'}. Gerencie alunos, registre presenças, crie eventos regionais ou modifique seus dados de recebimento Pix.`;
+        setPixKey(data?.pix_key || user.pix_key || '');
+        setPurpose(customPurpose);
+        return;
+      }
+
       if (!error && data) {
         setPixKey(data.pix_key || '');
         setPurpose(data.purpose || 'O Sistema Muzenza Garanhuns foi desenvolvido para centralizar a gestão do nosso grupo de Capoeira. Nossa missão é preservar a tradição, organizar o progresso técnico dos alunos e facilitar o acesso aos eventos oficiais e uniformes do grupo.');
@@ -56,9 +58,10 @@ export default function DashboardPage() {
 
   const saveConfig = async (update: any) => {
     try {
+      const configId = user?.role === 'director' ? user.id : 'global';
       const { error } = await supabase
         .from('config')
-        .upsert({ id: 'global', ...update });
+        .upsert({ id: configId, ...update }, { onConflict: 'id' });
       if (error) throw error;
     } catch (err) {
       console.error("Erro ao salvar config:", err);

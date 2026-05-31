@@ -59,6 +59,19 @@ export default function TreasuryPage() {
   const fetchConfig = async () => {
     try {
       if (user?.role === 'director') {
+        const { data, error } = await supabase
+          .from('config')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && data && data.pix_key) {
+          setPixKey(data.pix_key || '');
+          setPixName(data.pix_name || 'SEU NOME / DIRETOR');
+          setPixBank(data.pix_bank || 'SEU BANCO');
+          return;
+        }
+
         setPixKey(user.pix_key || '');
         setPixName(user.pix_name || 'SEU NOME / DIRETOR');
         setPixBank(user.pix_bank || 'SEU BANCO');

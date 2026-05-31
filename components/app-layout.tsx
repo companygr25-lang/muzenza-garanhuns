@@ -83,7 +83,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-6 md:p-8 lg:p-12 overflow-y-auto">
+        <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-12 overflow-y-auto">
           <div className="max-w-7xl mx-auto animate-fade-in pb-10">
             {children}
           </div>

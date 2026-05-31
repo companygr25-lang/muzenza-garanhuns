@@ -29,13 +29,15 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
 
   async function fetchData() {
+    if (!user) return;
     setDataLoading(true);
     try {
+      const configId = user.role === 'director' ? user.id : 'global';
       // Fetch Config
       const { data: config, error: configError } = await supabase
         .from('config')
         .select('*')
-        .eq('id', 'global')
+        .eq('id', configId)
         .single();
       
       if (!configError && config) {
@@ -43,6 +45,11 @@ export default function Settings() {
         setPixName(config.pix_name || '');
         setPixBank(config.pix_bank || '');
         setHighlightedEventId(config.highlighted_event_id || '');
+      } else if (configError && user.role === 'director') {
+        // Fallback fields from user context
+        setPixKey(user.pix_key || '');
+        setPixName(user.pix_name || '');
+        setPixBank(user.pix_bank || '');
       }
 
       // Fetch Events for dropdown
@@ -69,15 +76,17 @@ export default function Settings() {
   }, [isAdmin]);
 
   async function handleSaveConfig(e: React.FormEvent) {
+    if (!user) return;
     e.preventDefault();
     setSaving(true);
     try {
+      const configId = user.role === 'director' ? user.id : 'global';
       let payload: any = {
-        id: 'global',
+        id: configId,
         pix_key: pixKey,
         pix_name: pixName,
         pix_bank: pixBank,
-        highlighted_event_id: highlightedEventId
+        highlighted_event_id: highlightedEventId || null
       };
 
       let success = false;
@@ -125,12 +134,12 @@ export default function Settings() {
     }
   }
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'director') {
     return (
       <div className="py-20 text-center opacity-40">
         <ShieldAlert size={64} className="mx-auto mb-4" />
         <h2 className="text-2xl font-black">ACESSO NEGADO</h2>
-        <p className="text-xs uppercase font-bold tracking-widest mt-2">Esta página é restrita para o Administrador Geral (Mestre Bolacha).</p>
+        <p className="text-xs uppercase font-bold tracking-widest mt-2">Esta página é restrita para o Administrador Geral e Diretores Regionais.</p>
       </div>
     );
   }

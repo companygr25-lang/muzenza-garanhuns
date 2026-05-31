@@ -94,7 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar_url: data.avatar_url,
           city: data.city,
           country: data.country,
-          director_id: data.director_id
+          director_id: data.director_id,
+          pix_key: data.pix_key,
+          pix_name: data.pix_name,
+          pix_bank: data.pix_bank
         };
         setUser(updatedUser);
         localStorage.setItem('muzenza_session', JSON.stringify(updatedUser));
@@ -130,7 +133,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 avatar_url: data.avatar_url,
                 city: data.city,
                 country: data.country,
-                director_id: data.director_id
+                director_id: data.director_id,
+                pix_key: data.pix_key,
+                pix_name: data.pix_name,
+                pix_bank: data.pix_bank
               };
               setUser(updatedUser);
               localStorage.setItem('muzenza_session', JSON.stringify(updatedUser));

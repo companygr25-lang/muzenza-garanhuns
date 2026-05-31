@@ -110,7 +110,7 @@ export default function RulesPage() {
 
         <div className="grid lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-[#1E1E1E] p-12 rounded-3xl border border-[#333333] shadow-2xl relative overflow-hidden group border-l-8 border-brand-red">
+            <div className="bg-[#1E1E1E] p-5 sm:p-8 md:p-12 rounded-3xl border border-[#333333] shadow-2xl relative overflow-hidden group border-l-8 border-brand-red">
                <ClipboardList className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5" />
                <div className="relative z-10 space-y-8">
                   <div className="flex items-center gap-4 mb-10">
@@ -170,7 +170,7 @@ export default function RulesPage() {
           </div>
 
           <div className="space-y-8">
-            <div className="bg-brand-red/10 border border-brand-red/30 p-10 rounded-3xl">
+            <div className="bg-brand-red/10 border border-brand-red/30 p-5 sm:p-8 md:p-10 rounded-3xl">
                <h3 className="text-xl font-black italic tracking-tighter uppercase mb-6 flex items-center gap-3 text-brand-red">
                  <AlertCircle size={24} />
                  Importante

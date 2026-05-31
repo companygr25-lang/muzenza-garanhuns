@@ -49,6 +49,21 @@ export default function ProfilePage() {
       setPixKey(user.pix_key || '');
       setPixName(user.pix_name || '');
       setPixBank(user.pix_bank || '');
+
+      if (user.role === 'director') {
+        supabase
+          .from('config')
+          .select('pix_key, pix_name, pix_bank')
+          .eq('id', user.id)
+          .single()
+          .then(({ data, error }: { data: any; error: any }) => {
+            if (!error && data) {
+              setPixKey(data.pix_key || '');
+              setPixName(data.pix_name || '');
+              setPixBank(data.pix_bank || '');
+            }
+          });
+      }
     }
   }, [user]);
 
@@ -157,6 +172,24 @@ export default function ProfilePage() {
       }
 
       if (!success && lastError) throw lastError;
+
+      // If user is a director, also upsert their PIX details to config table
+      if (user.role === 'director') {
+        try {
+          const { error: configError } = await supabase
+            .from('config')
+            .upsert({
+              id: user.id,
+              pix_key: pixKey,
+              pix_name: pixName,
+              pix_bank: pixBank
+            }, { onConflict: 'id' });
+          
+          if (configError) throw configError;
+        } catch (configErr) {
+          console.error("Erro ao salvar PIX na tabela config:", configErr);
+        }
+      }
 
       // Se atualizou com sucesso e a foto nova é diferente, remove o arquivo da foto antiga para evitar acumular fotos duplicadas
       if (oldAvatar && oldAvatar !== avatarUrl) {
