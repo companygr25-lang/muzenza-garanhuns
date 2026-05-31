@@ -108,7 +108,7 @@ export const Sidebar = React.memo(function Sidebar({
           </Link>
         </div>
 
-        <nav className="flex-1 py-6 space-y-1">
+        <nav className="flex-1 py-6 space-y-1 overflow-y-auto min-h-0 pr-1 select-none">
           {filteredItems.map((item) => (
             <Link
               key={item.href}
@@ -213,7 +213,7 @@ export const Sidebar = React.memo(function Sidebar({
                  </button>
               </div>
 
-              <nav className="flex-1 space-y-2">
+              <nav className="flex-1 space-y-2 overflow-y-auto min-h-0 pr-1 py-1 select-none">
                 {filteredItems.map((item) => (
                   <Link
                     key={item.href}
