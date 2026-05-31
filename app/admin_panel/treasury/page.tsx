@@ -367,72 +367,74 @@ export default function TreasuryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         
         {/* Left Side: PIX Key Card & Form Info */}
         <div className="lg:col-span-5 space-y-6">
           
           {/* PIX Key Details */}
-          <div className="bg-brand-red/5 border-2 border-brand-red/20 p-8 rounded-3xl space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-red bg-brand-red/10 px-3 py-1.5 rounded-full">
-                  Dados do Bolacha
-                </span>
-                <h3 className="text-xl font-black uppercase tracking-tighter pt-3">Fazer Pix Coletivo</h3>
-              </div>
-              <Heart size={20} className="text-brand-red animate-pulse" />
-            </div>
-
-            <p className="text-gray-400 text-xs font-semibold leading-relaxed">
-              O valor vai direto para a conta oficial do Mestre para centralizar a compra de materiais, reparos e financiamento de eventos do grupo. Use a chave registrada abaixo.
-            </p>
-
-            <div className="space-y-4 bg-black p-5 rounded-2xl border border-[#333333]">
-              <div>
-                <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1">Chave Pix Ativa</p>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-sm font-bold text-white tracking-tight select-all truncate">
-                    {pixKey || 'CHAVE NÃO PARAMETRIZADA'}
+          {user?.role !== 'director' && (
+            <div className="bg-brand-red/5 border-2 border-brand-red/20 p-5 sm:p-8 rounded-3xl space-y-6">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-red bg-brand-red/10 px-3 py-1.5 rounded-full">
+                    Dados do Bolacha
                   </span>
-                  {pixKey && (
-                    <button 
-                      onClick={copyPixKey}
-                      className={cn(
-                        "p-2 rounded-xl border transition-all shrink-0",
-                        copied 
-                          ? "bg-green-500/20 border-green-500 text-green-400" 
-                          : "bg-[#1A1A1A] border-[#333333] hover:bg-[#252525] text-gray-400 hover:text-white"
-                      )}
-                    >
-                      <Copy size={14} />
-                    </button>
-                  )}
+                  <h3 className="text-xl font-black uppercase tracking-tighter pt-3">Fazer Pix Coletivo</h3>
                 </div>
+                <Heart size={20} className="text-brand-red animate-pulse" />
               </div>
 
-              <div className="h-px bg-[#222] my-2" />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1 font-bold">Iniciais Beneficiário</p>
-                  <p className="text-xs font-bold text-gray-300 uppercase truncate">{pixName}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1 font-bold">Banco Operador</p>
-                  <p className="text-xs font-bold text-gray-300 uppercase truncate">{pixBank}</p>
-                </div>
-              </div>
-            </div>
-            {copied && (
-              <p className="text-[10px] font-black uppercase tracking-wide text-green-400 text-center">
-                ✔ Chave copiada para a área de transferência!
+              <p className="text-gray-400 text-xs font-semibold leading-relaxed">
+                O valor vai direto para a conta oficial do Mestre para centralizar a compra de materiais, reparos e financiamento de eventos do grupo. Use a chave registrada abaixo.
               </p>
-            )}
-          </div>
+
+              <div className="space-y-4 bg-black p-5 rounded-2xl border border-[#333333]">
+                <div>
+                  <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1">Chave Pix Ativa</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-sm font-bold text-white tracking-tight select-all truncate">
+                      {pixKey || 'CHAVE NÃO PARAMETRIZADA'}
+                    </span>
+                    {pixKey && (
+                      <button 
+                        onClick={copyPixKey}
+                        className={cn(
+                          "p-2 rounded-xl border transition-all shrink-0",
+                          copied 
+                            ? "bg-green-500/20 border-green-500 text-green-400" 
+                            : "bg-[#1A1A1A] border-[#333333] hover:bg-[#252525] text-gray-400 hover:text-white"
+                        )}
+                      >
+                        <Copy size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#222] my-2" />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1 font-bold">Iniciais Beneficiário</p>
+                    <p className="text-xs font-bold text-gray-300 uppercase truncate">{pixName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1 font-bold">Banco Operador</p>
+                    <p className="text-xs font-bold text-gray-300 uppercase truncate">{pixBank}</p>
+                  </div>
+                </div>
+              </div>
+              {copied && (
+                <p className="text-[10px] font-black uppercase tracking-wide text-green-400 text-center">
+                  ✔ Chave copiada para a área de transferência!
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Contribution Reporting Form */}
-          <div className="bg-[#1E1E1E] p-8 rounded-3xl border border-[#333333] space-y-6">
+          <div className="bg-[#1E1E1E] p-5 sm:p-8 rounded-3xl border border-[#333333] space-y-6">
             <h3 className="text-xl font-black uppercase tracking-tight italic">Registrar Apoio Financeiro</h3>
 
             {successMsg && (

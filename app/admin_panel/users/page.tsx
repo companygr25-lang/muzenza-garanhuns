@@ -826,7 +826,7 @@ function UsersPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="relative w-full max-w-sm bg-[#1A1A1A] border border-red-900/30 rounded-3xl p-10 shadow-2xl text-center"
+                className="relative w-full max-w-sm bg-[#1A1A1A] border border-red-900/30 rounded-3xl p-6 sm:p-10 shadow-2xl text-center"
               >
                 <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
                   <Trash2 size={40} />

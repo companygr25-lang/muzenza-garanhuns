@@ -151,9 +151,9 @@ export default function Settings() {
           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Gerencie o sistema e as integrações.</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
           <form onSubmit={handleSaveConfig} className="space-y-8">
-            <div className="p-8 bg-card border border-border rounded-[2.5rem] space-y-6">
+            <div className="p-5 sm:p-8 bg-card border border-border rounded-[2.5rem] space-y-6">
               <h2 className="text-2xl font-black tracking-tighter flex items-center gap-3">
                 <Wallet className="text-brand-red" /> Configuração PIX
               </h2>
@@ -189,7 +189,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="p-8 bg-card border border-border rounded-[2.5rem] space-y-6">
+            <div className="p-5 sm:p-8 bg-card border border-border rounded-[2.5rem] space-y-6">
               <h2 className="text-2xl font-black tracking-tighter flex items-center gap-3">
                 <Bell className="text-brand-red" /> Promoção de Eventos
               </h2>
@@ -220,7 +220,7 @@ export default function Settings() {
           </form>
 
           <div className="space-y-8">
-            <div className="p-8 bg-brand-black text-brand-white rounded-[2.5rem] border border-white/10">
+            <div className="p-5 sm:p-8 bg-brand-black text-brand-white rounded-[2.5rem] border border-white/10">
               <h2 className="text-2xl font-black tracking-tighter mb-4">Preview do Convite</h2>
               <p className="text-white/60 text-sm mb-8 leading-relaxed">
                 Assim que você configurar seu PIX, os membros verão este cartão durante as inscrições e compras.
@@ -240,7 +240,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="p-8 bg-secondary/50 rounded-[2.5rem] border border-border">
+            <div className="p-5 sm:p-8 bg-secondary/50 rounded-[2.5rem] border border-border">
               <h2 className="text-xl font-black tracking-tighter mb-4 flex items-center gap-3">
                 <Tag className="text-brand-red" /> Atalhos de Sistema
               </h2>

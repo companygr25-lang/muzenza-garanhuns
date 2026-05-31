@@ -210,7 +210,7 @@ export function ManualModal({ isOpen, onClose }: ManualModalProps) {
 
         {/* Slide Content */}
         <div 
-          className="p-8 md:p-12 flex-1 flex flex-col items-center text-center justify-center min-h-[300px] md:min-h-[350px] cursor-pointer hover:bg-white/[0.01] transition-colors"
+          className="p-5 sm:p-8 md:p-12 flex-1 flex flex-col items-center text-center justify-center min-h-[300px] md:min-h-[350px] cursor-pointer hover:bg-white/[0.01] transition-colors"
           onClick={handleScreenClick}
           title="Clique em qualquer lugar do slide para avançar"
         >

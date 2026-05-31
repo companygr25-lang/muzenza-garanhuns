@@ -165,7 +165,7 @@ export default function AttendancePage() {
             </div>
 
             <div className="bg-[#1E1E1E] rounded-3xl border border-[#333333] shadow-2xl overflow-hidden">
-               <div className="p-8 border-b border-[#333333] flex justify-between items-center bg-[#181818]">
+               <div className="p-5 sm:p-8 border-b border-[#333333] flex justify-between items-center bg-[#181818]">
                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Lista de Alunos</h2>
                   <span className="bg-brand-red text-white text-[10px] font-black px-3 py-1 rounded-full">
                     {filteredProfiles.length} TOTAL
@@ -232,7 +232,7 @@ export default function AttendancePage() {
 
           {/* Sidebar / Stats */}
           <div className="space-y-8 text-brand-black">
-             <div className="bg-brand-red p-10 rounded-3xl shadow-[0_20px_50px_rgba(211,47,47,0.4)] text-white relative overflow-hidden">
+             <div className="bg-brand-red p-5 sm:p-8 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(211,47,47,0.4)] text-white relative overflow-hidden">
                 <ClipboardCheck size={120} className="absolute -bottom-8 -right-8 opacity-20 rotate-12" />
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-80">Presentes Hoje</p>
                 <div className="flex items-end gap-3 mb-6">
@@ -246,7 +246,7 @@ export default function AttendancePage() {
                 </div>
              </div>
 
-             <div className="bg-[#1E1E1E] p-10 rounded-3xl border border-[#333333] shadow-2xl">
+             <div className="bg-[#1E1E1E] p-5 sm:p-8 md:p-10 rounded-3xl border border-[#333333] shadow-2xl">
                 <h3 className="text-lg font-black uppercase italic tracking-tighter mb-8 text-brand-red">Resumo da Semana</h3>
                 <div className="space-y-6">
                    {[

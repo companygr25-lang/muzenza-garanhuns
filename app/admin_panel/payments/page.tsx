@@ -135,7 +135,7 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
           {/* PIX Payment Section */}
           <motion.div 
             initial={{ x: -20, opacity: 0 }}

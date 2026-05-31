@@ -188,7 +188,7 @@ export default function DashboardPage() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: i * 0.1 }}
               style={{ borderLeftColor: stat.color }}
-              className="bg-[#1E1E1E] p-8 rounded-2xl border-l-[6px] border-[#333333] shadow-2xl group hover:border-[#333333] hover:translate-y-[-4px] transition-all"
+              className="bg-[#1E1E1E] p-5 sm:p-8 rounded-2xl border-l-[6px] border-[#333333] shadow-2xl group hover:border-[#333333] hover:translate-y-[-4px] transition-all"
             >
               <div className="flex justify-between items-start mb-6">
                 <p className="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em]">{stat.label}</p>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
         {/* Bottom Section */}
         <div className="grid lg:grid-cols-1 gap-8">
           <div className="space-y-8">
-            <div className="bg-brand-red/5 border border-brand-red/20 p-8 rounded-3xl relative">
+            <div className="bg-brand-red/5 border border-brand-red/20 p-5 sm:p-8 rounded-3xl relative">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-black italic uppercase tracking-tighter text-brand-red">Nossa Finalidade</h2>
                 {isAdmin && (

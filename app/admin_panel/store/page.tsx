@@ -213,7 +213,7 @@ const StorePage = () => {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <form onSubmit={handleAdd} className="bg-[#1E1E1E] p-10 rounded-2xl border border-[#333333] space-y-6">
+              <form onSubmit={handleAdd} className="bg-[#1E1E1E] p-5 sm:p-10 rounded-2xl border border-[#333333] space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Nome do Produto</label>

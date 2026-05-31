@@ -108,7 +108,7 @@ export default function RulesPage() {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-12">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-12">
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-[#1E1E1E] p-5 sm:p-8 md:p-12 rounded-3xl border border-[#333333] shadow-2xl relative overflow-hidden group border-l-8 border-brand-red">
                <ClipboardList className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5" />

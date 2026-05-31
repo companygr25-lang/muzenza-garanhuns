@@ -224,7 +224,7 @@ export default function ProfilePage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Profile Card */}
         <div className="lg:col-span-1">
-          <div className="bg-[#1A1A1A] border border-brand-red/20 rounded-3xl p-8 sticky top-24 relative overflow-hidden group">
+          <div className="bg-[#1A1A1A] border border-brand-red/20 rounded-3xl p-5 sm:p-8 sticky top-24 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <ShieldAlert size={80} className="text-brand-red" />
             </div>
@@ -278,7 +278,7 @@ export default function ProfilePage() {
 
         {/* Edit Form */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleUpdateProfile} className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-8 md:p-12 space-y-8">
+          <form onSubmit={handleUpdateProfile} className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-5 sm:p-8 md:p-12 space-y-8">
             <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Editar Credenciais</h3>
             
             {message && (
