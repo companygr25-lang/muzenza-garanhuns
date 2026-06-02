@@ -770,8 +770,8 @@ export default function PaymentsPage() {
               </div>
             </div>
 
-            {/* List Table */}
-            <div className="rounded-2xl border overflow-hidden bg-[#121212] border-[#333333] text-white">
+            {/* List Table with Responsive Fallback */}
+            <div className="rounded-2xl border overflow-hidden bg-[#1E1E1E] border-[#333333] text-white">
               {reportLoading ? (
                 <div className="p-12 text-center text-gray-500 font-bold uppercase tracking-widest text-xs animate-pulse">
                   Carregando lista de alunos da regional...
@@ -781,41 +781,82 @@ export default function PaymentsPage() {
                   Nenhum aluno encontrado para os filtros selecionados.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#333333]/80 bg-[#1A1A1A]/50 text-gray-500">
-                        <th className="p-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Aluno</th>
-                        <th className="p-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Graduação</th>
-                        <th className="p-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Telefone / Contato</th>
-                        <th className="p-5 text-[10px] font-black uppercase tracking-widest text-center text-gray-500">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#333333]/40">
-                      {filteredStudents.map((st, idx) => (
-                        <tr key={st.id || idx} className="transition-colors hover:bg-white/[0.02]">
-                          <td className="p-5 font-bold text-sm tracking-tight text-white">{st.username || 'Aluno Sem Nome'}</td>
-                          <td className="p-5 text-xs font-black uppercase tracking-wide">
-                            <span className="px-4 py-1.5 rounded-full font-extrabold text-xs border bg-[#2B2B2B] border-[#444444] text-white shadow-lg">
-                              {st.graduation || 'Cordão não cadastrado'}
+                <>
+                  {/* Mobile Stacked Cards Layout */}
+                  <div className="block md:hidden divide-y divide-[#333333]/40">
+                    {filteredStudents.map((st, idx) => (
+                      <div key={st.id || idx} className="p-5 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="font-black text-white text-base uppercase tracking-tight leading-tight">{st.username || 'Aluno Sem Nome'}</h4>
+                            <p className="text-[10px] text-[#888888] font-bold uppercase mt-1">ID CADASTRO: {idx + 1}</p>
+                          </div>
+                          <span className={cn(
+                            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shrink-0",
+                            st.monthly_paid
+                              ? "bg-green-500/10 border-green-500/30 text-green-400"
+                              : "bg-red-500/10 border-red-500/30 text-red-400"
+                          )}>
+                            {st.monthly_paid ? 'Sem Pendências' : 'Pendente'}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-[#121212] p-3 rounded-xl border border-[#333333]/80">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-gray-500 block mb-1">Graduação</span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-wider block truncate">
+                              {st.graduation || 'SEM CORDÃO'}
                             </span>
-                          </td>
-                          <td className="p-5 text-xs font-mono font-semibold text-gray-400">{st.phone || '(87) 9****-****'}</td>
-                          <td className="p-4 text-center">
-                            <span className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                              st.monthly_paid
-                                ? "bg-green-500/10 border border-green-500/30 text-green-400"
-                                : "bg-red-500/10 border border-red-500/30 text-red-400"
-                            )}>
-                              {st.monthly_paid ? 'Sem Pendências' : 'Pendente'}
+                          </div>
+                          
+                          <div className="bg-[#121212] p-3 rounded-xl border border-[#333333]/80">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-gray-500 block mb-1">Contato</span>
+                            <span className="text-[10px] font-mono font-semibold text-gray-400 block truncate">
+                              {st.phone || '(87) 9****-****'}
                             </span>
-                          </td>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[#333333]/80 bg-[#1A1A1A]/50 text-gray-500">
+                          <th className="p-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Aluno</th>
+                          <th className="p-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Graduação</th>
+                          <th className="p-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Telefone / Contato</th>
+                          <th className="p-5 text-[10px] font-black uppercase tracking-widest text-center text-gray-500">Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-[#333333]/40">
+                        {filteredStudents.map((st, idx) => (
+                          <tr key={st.id || idx} className="transition-colors hover:bg-white/[0.02]">
+                            <td className="p-5 font-bold text-sm tracking-tight text-white">{st.username || 'Aluno Sem Nome'}</td>
+                            <td className="p-5 text-xs font-black uppercase tracking-wide">
+                              <span className="px-4 py-1.5 rounded-full font-extrabold text-xs border bg-[#2B2B2B] border-[#444444] text-white shadow-lg">
+                                {st.graduation || 'Cordão não cadastrado'}
+                              </span>
+                            </td>
+                            <td className="p-5 text-xs font-mono font-semibold text-gray-400">{st.phone || '(87) 9****-****'}</td>
+                            <td className="p-4 text-center">
+                              <span className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                                st.monthly_paid
+                                  ? "bg-green-500/10 border border-green-500/30 text-green-400"
+                                  : "bg-red-500/10 border border-red-500/30 text-red-400"
+                              )}>
+                                {st.monthly_paid ? 'Sem Pendências' : 'Pendente'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </motion.div>
