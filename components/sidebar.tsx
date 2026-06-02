@@ -16,7 +16,8 @@ import {
   X,
   Trophy,
   ClipboardCheck,
-  ShieldCheck
+  ShieldCheck,
+  Award
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/lib/auth-provider';
@@ -54,6 +55,7 @@ export const Sidebar = React.memo(function Sidebar({
     { name: 'Loja', href: '/admin_panel/store', icon: ShoppingBag, adminOnly: false },
     { name: 'Regras', href: '/admin_panel/rules', icon: ShieldCheck, adminOnly: false },
     { name: 'Pagamentos', href: '/admin_panel/payments', icon: CreditCard, adminOnly: false },
+    { name: 'Certificados', href: '/admin_panel/certificates', icon: Award, adminOnly: true },
     { name: 'Tesouraria', href: '/admin_panel/treasury', icon: Trophy, adminOnly: false },
     { name: 'Configurações', href: '/admin_panel/settings', icon: Settings, adminOnly: true },
     { name: 'Guia Prático', href: '#manual', icon: ClipboardCheck, adminOnly: false },

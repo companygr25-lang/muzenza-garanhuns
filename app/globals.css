@@ -58,3 +58,96 @@ body {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* Otimização de Impressão e Geração de PDF */
+@media print {
+  html, body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Ocultar elementos de navegação e controles no PDF */
+  aside, 
+  nav, 
+  header, 
+  footer, 
+  button, 
+  [role="dialog"],
+  .no-print,
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Expandir a área de conteúdo para ocupar todo o espaço */
+  main, 
+  .flex-1,
+  div[class*="max-w-7xl"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Garantir cores de fundo no PDF ex: badges e indicadores */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Limpar estilos de cards para exibição em papel ou PDF */
+  .bg-\[\#1E1E1E\] {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e4e4e7 !important;
+  }
+
+  .bg-\[\#151515\] {
+    background-color: #f4f4f5 !important;
+    color: #000000 !important;
+    border: 1px solid #e4e4e7 !important;
+  }
+
+  .bg-\[\#121212\] {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e4e4e7 !important;
+  }
+
+  /* Forçar que as cores de textos de alerta apareçam de forma legível no fundo claro do PDF */
+  .text-white {
+    color: #000000 !important;
+  }
+  
+  .text-gray-400, .text-gray-500 {
+    color: #4b5563 !important;
+  }
+
+  .text-brand-red {
+    color: #D32F2F !important;
+  }
+
+  .text-green-500 {
+    color: #16a34a !important;
+  }
+
+  .text-red-500 {
+    color: #dc2626 !important;
+  }
+
+  .text-blue-400 {
+    color: #2563eb !important;
+  }
+}
+

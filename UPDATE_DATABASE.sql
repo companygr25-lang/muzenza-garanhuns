@@ -66,3 +66,6 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pix_bank TEXT;
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS director_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
 ALTER TABLE public.treasury_contributions ADD COLUMN IF NOT EXISTS director_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
 
+-- 8. CRIAR COLUNA DE CERTIFICADOS PARA DIRETORES
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS certificates JSONB DEFAULT '[]'::jsonb;
+

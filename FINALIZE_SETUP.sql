@@ -147,6 +147,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pix_bank') THEN
         ALTER TABLE public.users ADD COLUMN pix_bank TEXT;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='certificates') THEN
+        ALTER TABLE public.users ADD COLUMN certificates JSONB DEFAULT '[]'::jsonb;
+    END IF;
 
     -- Criar bucket de avatars se não existir (Storage)
     -- Nota: Isso requer que a extensão de storage esteja habilitada

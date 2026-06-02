@@ -2,5 +2,5 @@
   "name": "MUZENZA Capoeira",
   "description": "Aplicativo oficial do Grupo MUZENZA para gestão de membros, eventos, loja e pagamentos.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
