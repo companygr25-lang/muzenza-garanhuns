@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     phone TEXT,
     graduation TEXT DEFAULT 'Sem Corda',
     monthly_paid BOOLEAN DEFAULT false,
+    months_paid_remaining INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -117,7 +117,7 @@ export default function UserDashboard() {
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Status Mensalidade</p>
             <p className="text-xl font-black italic uppercase tracking-tighter text-white">
-              {isDirector ? 'ACESSO VITALÍCIO' : (user?.monthly_paid ? 'PAGA / EM DIA' : 'PENDENTE')}
+              {isDirector ? 'ACESSO VITALÍCIO' : (user?.monthly_paid ? ((user?.months_paid_remaining && user.months_paid_remaining > 1) ? `PAGA (${user.months_paid_remaining} Meses)` : 'PAGA / EM DIA') : 'PENDENTE')}
             </p>
           </div>
         </motion.div>

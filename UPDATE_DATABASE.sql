@@ -68,4 +68,5 @@ ALTER TABLE public.treasury_contributions ADD COLUMN IF NOT EXISTS director_id U
 
 -- 8. CRIAR COLUNA DE CERTIFICADOS PARA DIRETORES
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS certificates JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS months_paid_remaining INTEGER DEFAULT 0;
 

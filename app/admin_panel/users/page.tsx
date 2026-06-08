@@ -29,6 +29,7 @@ interface UserProfile {
   monthly_paid?: boolean;
   graduation?: string;
   avatar_url?: string;
+  months_paid_remaining?: number;
 }
 
 const generateFileName = (ext: string) => {
@@ -88,6 +89,10 @@ function UsersPage() {
   const [newPhone, setNewPhone] = useState('');
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
   const [newGraduation, setNewGraduation] = useState('Sem Corda');
+  const [newMonthsPaidRemaining, setNewMonthsPaidRemaining] = useState<number>(0);
+  const [isConfirmPaymentModalOpen, setIsConfirmPaymentModalOpen] = useState(false);
+  const [paymentUserToConfirm, setPaymentUserToConfirm] = useState<{ id: string; username: string; current: boolean } | null>(null);
+  const [paymentConfirmMonths, setPaymentConfirmMonths] = useState(1);
   const [uploading, setUploading] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,7 +279,9 @@ function UsersPage() {
         phone: newPhone.trim(),
         role: newRole,
         graduation: newGraduation,
-        avatar_url: newAvatarUrl.trim()
+        avatar_url: newAvatarUrl.trim(),
+        months_paid_remaining: newMonthsPaidRemaining,
+        monthly_paid: newMonthsPaidRemaining > 0
       };
 
       if (newPassword) {
@@ -319,33 +326,71 @@ function UsersPage() {
     setNewRole(u.role);
     setNewGraduation(u.graduation || 'Sem Corda');
     setNewAvatarUrl(u.avatar_url || '');
+    setNewMonthsPaidRemaining(u.months_paid_remaining || 0);
     setNewPassword('');
     setError(null);
     setIsEditModalOpen(true);
   };
 
-  const handleTogglePayment = async (id: string, current: boolean, name: string) => {
+  const handleTogglePayment = async (id: string, current: boolean, name: string, currentMonths = 0) => {
+    if (current) {
+      const confirmAction = window.confirm(`Deseja estornar o pagamento de ${name}? Isso definirá as mensalidades pagas como 0 e o status como pendente.`);
+      if (!confirmAction) return;
+
+      setSubmitting(true);
+      try {
+        const { error } = await supabase
+          .from('users')
+          .update({ 
+            monthly_paid: false,
+            months_paid_remaining: 0
+          })
+          .eq('id', id);
+        
+        if (error) throw error;
+        setSuccess(`Pagamento de ${name} estornado.`);
+        await fetchUsers();
+      } catch (err: any) {
+        alert('Erro ao estornar pagamento: ' + err.message);
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      setPaymentUserToConfirm({ id, username: name, current });
+      setPaymentConfirmMonths(1);
+      setIsConfirmPaymentModalOpen(true);
+    }
+  };
+
+  const handleConfirmMultiPaymentSubmit = async () => {
+    if (!paymentUserToConfirm) return;
     setSubmitting(true);
     try {
       const { error } = await supabase
         .from('users')
-        .update({ monthly_paid: !current })
-        .eq('id', id);
+        .update({ 
+          monthly_paid: true, 
+          months_paid_remaining: paymentConfirmMonths 
+        })
+        .eq('id', paymentUserToConfirm.id);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      setSuccess(`${name}: Pagamento atualizado.`);
-      // Realtime should update the UI, but we fetch just in case
+      setIsConfirmPaymentModalOpen(false);
+      setPaymentUserToConfirm(null);
+      setSuccess(`Registrado pagamento de ${paymentConfirmMonths} ${paymentConfirmMonths === 1 ? 'mensalidade' : 'mensalidades'} para ${paymentUserToConfirm.username}.`);
       await fetchUsers();
-    } catch (error: any) {
-       console.error("Erro ao atualizar pagamento:", error);
-       setError("Erro ao atualizar pagamento.");
+    } catch (err: any) {
+      alert('Erro ao confirmar pagamento: ' + err.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+
+      
+
+
 
   const handleUpdateGraduation = async (id: string, graduation: string, name: string) => {
     setSubmitting(true);
@@ -773,6 +818,37 @@ function UsersPage() {
                     </div>
                   </div>
 
+                  {/* Mensalidades no Edit Modal */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Mensalidades Quitadas (Período Ativo)</label>
+                    <div className="flex gap-4 items-center">
+                      <div className="flex bg-[#121212] border border-[#333333] rounded-xl overflow-hidden shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setNewMonthsPaidRemaining(prev => Math.max(0, prev - 1))}
+                          className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white font-black hover:text-brand-red transition-all border-r border-[#333333] cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="px-5 py-3 font-mono font-black text-white text-sm min-w-[40px] text-center flex items-center justify-center">
+                          {newMonthsPaidRemaining}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setNewMonthsPaidRemaining(prev => prev + 1)}
+                          className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white font-black hover:text-brand-red transition-all border-l border-[#333333] cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider leading-snug">
+                        {newMonthsPaidRemaining === 0 
+                          ? 'Ficará Pendente' 
+                          : `Garante status Pago por ${newMonthsPaidRemaining} ${newMonthsPaidRemaining === 1 ? 'mês' : 'meses'}`}
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Tipo de Acesso</label>
                     <div className="grid grid-cols-2 gap-4">
@@ -850,6 +926,88 @@ function UsersPage() {
                   >
                     Cancelar
                   </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isConfirmPaymentModalOpen && paymentUserToConfirm && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setIsConfirmPaymentModalOpen(false);
+                  setPaymentUserToConfirm(null);
+                }}
+                className="absolute inset-0 bg-black/95 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="relative w-full max-w-sm bg-[#1A1A1A] border border-[#333333] rounded-3xl p-6 sm:p-10 shadow-2xl"
+              >
+                <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-2 text-center text-brand-red">Registrar Pagamento</h3>
+                <p className="text-gray-400 font-bold text-center text-xs mb-8 uppercase tracking-widest leading-relaxed">
+                  Quitar mensalidades para o aluno <span className="text-white italic">{paymentUserToConfirm.username}</span>
+                </p>
+
+                <div className="space-y-6">
+                  {/* Seletor de Mensalidades */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black uppercase text-gray-500 tracking-wider text-center">Quantos meses o aluno pagou?</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[1, 2, 3, 6, 12].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setPaymentConfirmMonths(m)}
+                          className={cn(
+                            "py-3 rounded-xl text-center font-black transition-all border text-xs cursor-pointer",
+                            paymentConfirmMonths === m
+                              ? "bg-brand-red border-brand-red text-white shadow-lg shadow-brand-red/10"
+                              : "bg-black/40 border-[#333333] hover:border-gray-500 text-gray-400"
+                          )}
+                        >
+                          {m}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-black/60 p-5 rounded-2xl border border-[#333333] space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500 font-bold uppercase tracking-wider">Período:</span>
+                      <span className="text-white font-black italic">{paymentConfirmMonths} {paymentConfirmMonths === 1 ? 'Mês' : 'Meses'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500 font-bold uppercase tracking-wider">Valor total:</span>
+                      <span className="text-brand-red font-black text-sm italic bg-brand-red/10 px-3 py-1 rounded-lg border border-brand-red/20">R$ {(paymentConfirmMonths * 50).toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-2">
+                    <button 
+                      onClick={handleConfirmMultiPaymentSubmit}
+                      disabled={submitting}
+                      className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl transition-all shadow-xl shadow-red-900/20"
+                    >
+                      {submitting ? 'Confirmando...' : 'Confirmar Pagamento'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsConfirmPaymentModalOpen(false);
+                        setPaymentUserToConfirm(null);
+                      }}
+                      className="w-full py-4 bg-transparent text-gray-500 font-black uppercase text-xs tracking-[0.2em] rounded-xl hover:text-white transition-all"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </div>

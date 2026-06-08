@@ -1,7 +1,7 @@
 /**
  * Utility to generate a static PIX BRCode payload
  */
-export function generatePixPayload(key: string, name: string, city: string = 'GARANHUNS'): string {
+export function generatePixPayload(key: string, name: string, city: string = 'GARANHUNS', amount?: number): string {
   const cleanKey = key.replace(/[^a-zA-Z0-9@.+]/g, '');
   const cleanName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().slice(0, 25);
   const cleanCity = city.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().slice(0, 15);
@@ -20,6 +20,11 @@ export function generatePixPayload(key: string, name: string, city: string = 'GA
   payload += merchantAccountInfo;
   payload += "52040000"; // Merchant Category Code
   payload += "5303986";  // Currency (BRL)
+  
+  if (amount && amount > 0) {
+    payload += formatField("54", amount.toFixed(2));
+  }
+  
   payload += "5802BR";   // Country Code
   payload += formatField("59", cleanName || "MUZENZA");
   payload += formatField("60", cleanCity);

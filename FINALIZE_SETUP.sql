@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     status TEXT DEFAULT 'active',
     avatar_url TEXT,
     monthly_paid BOOLEAN DEFAULT false,
+    months_paid_remaining INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -17,6 +17,7 @@ interface UserData {
   pix_key?: string;
   pix_name?: string;
   pix_bank?: string;
+  months_paid_remaining?: number;
 }
 
 interface AppConfig {
@@ -97,7 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           director_id: data.director_id,
           pix_key: data.pix_key,
           pix_name: data.pix_name,
-          pix_bank: data.pix_bank
+          pix_bank: data.pix_bank,
+          months_paid_remaining: data.months_paid_remaining
         };
         setUser(updatedUser);
         localStorage.setItem('muzenza_session', JSON.stringify(updatedUser));
@@ -136,7 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 director_id: data.director_id,
                 pix_key: data.pix_key,
                 pix_name: data.pix_name,
-                pix_bank: data.pix_bank
+                pix_bank: data.pix_bank,
+                months_paid_remaining: data.months_paid_remaining
               };
               setUser(updatedUser);
               localStorage.setItem('muzenza_session', JSON.stringify(updatedUser));

@@ -219,11 +219,12 @@ export default function PaymentsPage() {
   const [reportLoading, setReportLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPaid, setFilterPaid] = useState<'all' | 'paid' | 'pending'>('all');
+  const [paymentMonths, setPaymentMonths] = useState(1);
 
   const pixPayload = React.useMemo(() => {
     if (!pixData.key || !pixData.name) return '';
-    return generatePixPayload(pixData.key, pixData.name);
-  }, [pixData.key, pixData.name]);
+    return generatePixPayload(pixData.key, pixData.name, 'GARANHUNS', paymentMonths * 50);
+  }, [pixData.key, pixData.name, paymentMonths]);
 
   const fetchPix = async () => {
     if (!user) return;
@@ -310,7 +311,7 @@ export default function PaymentsPage() {
     try {
       let query = supabase
         .from('users')
-        .select('id, username, role, phone, monthly_paid, graduation, director_id')
+        .select('id, username, role, phone, monthly_paid, graduation, director_id, months_paid_remaining')
         .order('username', { ascending: true });
       
       // If director, filter by their region/director_id
@@ -459,6 +460,37 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
+              {/* Seletor de Mensalidades Acumuladas */}
+              <div className="p-6 bg-[#121212] border border-[#333333] rounded-2xl space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-red">Fazer Pagamento Acumulado</p>
+                <p className="text-xs text-gray-400 font-bold uppercase leading-tight">Escolha quantas mensalidades quer pagar ao mesmo tempo:</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 6, 12].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setPaymentMonths(m)}
+                      className={cn(
+                        "py-3 rounded-xl text-center font-black transition-all border text-xs cursor-pointer",
+                        paymentMonths === m
+                          ? "bg-brand-red border-brand-red text-white shadow-lg"
+                          : "bg-black/40 border-[#333333] hover:border-gray-500 text-gray-400"
+                      )}
+                    >
+                      {m}x
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-2 flex items-center justify-between border-t border-[#333333]/60 text-[10px]">
+                  <span className="text-gray-500 font-bold uppercase tracking-wider">Quantidade acumulada:</span>
+                  <span className="text-white font-black italic">{paymentMonths} {paymentMonths === 1 ? 'Mês' : 'Meses'}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500 font-bold uppercase tracking-wider">Valor total:</span>
+                  <span className="text-brand-red font-black text-sm italic bg-brand-red/10 px-3 py-1 rounded-lg border border-brand-red/20">R$ {(paymentMonths * 50).toFixed(2)}</span>
+                </div>
+              </div>
+
               <div className="text-center">
                 <button 
                   onClick={() => setShowQR(!showQR)}
@@ -505,7 +537,7 @@ export default function PaymentsPage() {
                       )}
                     </button>
                     <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest max-w-[250px] text-center">
-                      Escaneie com o app do seu banco para confirmar a mensalidade para <strong>{pixData.name}</strong> ({pixData.bank}).
+                      Escaneie com o app do seu banco para confirmar as {paymentMonths} {paymentMonths === 1 ? 'mensalidade' : 'mensalidades'} no valor de <strong>R$ {(paymentMonths * 50).toFixed(2)}</strong> para <strong>{pixData.name}</strong> ({pixData.bank}).
                     </p>
                   </motion.div>
                 )}
@@ -797,7 +829,7 @@ export default function PaymentsPage() {
                               ? "bg-green-500/10 border-green-500/30 text-green-400"
                               : "bg-red-500/10 border-red-500/30 text-red-400"
                           )}>
-                            {st.monthly_paid ? 'Sem Pendências' : 'Pendente'}
+                            {st.monthly_paid ? ((st.months_paid_remaining && st.months_paid_remaining > 1) ? `Em dia (${st.months_paid_remaining}m)` : 'Sem Pendências') : 'Pendente'}
                           </span>
                         </div>
                         
@@ -848,7 +880,7 @@ export default function PaymentsPage() {
                                   ? "bg-green-500/10 border border-green-500/30 text-green-400"
                                   : "bg-red-500/10 border border-red-500/30 text-red-400"
                               )}>
-                                {st.monthly_paid ? 'Sem Pendências' : 'Pendente'}
+                                {st.monthly_paid ? ((st.months_paid_remaining && st.months_paid_remaining > 1) ? `Em dia (${st.months_paid_remaining}m)` : 'Sem Pendências') : 'Pendente'}
                               </span>
                             </td>
                           </tr>
