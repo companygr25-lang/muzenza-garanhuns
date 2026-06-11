@@ -663,10 +663,10 @@ export default function LandingPage() {
                           }}
                           className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
                         >
-                          <option value="">GARANHUNS - PE</option>
+                          <option value="">GARANHUNS - PE (Sede Geral)</option>
                           {directors.map((d) => (
                             <option key={d.id} value={d.id}>
-                              {(d.city || 'Desconhecido').toUpperCase()} - {(d.country || 'PE').toUpperCase()}
+                              {(d.city || 'Desconhecido').toUpperCase()} - {(d.country || 'PE').toUpperCase()} (Diretor: {d.username})
                             </option>
                           ))}
                         </select>
