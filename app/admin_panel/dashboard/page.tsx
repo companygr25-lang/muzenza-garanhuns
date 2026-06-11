@@ -83,6 +83,12 @@ export default function DashboardPage() {
         pendingQuery = pendingQuery.eq('director_id', user.id);
         confirmedQuery = confirmedQuery.eq('director_id', user.id);
         treasuryQuery = treasuryQuery.eq('director_id', user.id);
+      } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
+        userQuery = userQuery.or(`director_id.is.null,director_id.eq.${user.id}`);
+        eventQuery = eventQuery.or(`director_id.eq.${user.id},director_id.is.null`);
+        pendingQuery = pendingQuery.or(`director_id.is.null,director_id.eq.${user.id}`);
+        confirmedQuery = confirmedQuery.or(`director_id.is.null,director_id.eq.${user.id}`);
+        treasuryQuery = treasuryQuery.or(`director_id.eq.${user.id},director_id.is.null`);
       }
 
       const { count: userCount } = await userQuery;

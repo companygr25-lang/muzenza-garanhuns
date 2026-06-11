@@ -41,10 +41,19 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
 
   const fetchProfiles = async () => {
-    const { data, error } = await supabase
+    if (!user) return;
+    let query = supabase
       .from('users')
-      .select('id, username, graduation, avatar_url')
+      .select('id, username, graduation, avatar_url, director_id')
       .order('username');
+
+    if (user.role === 'director') {
+      query = query.eq('director_id', user.id);
+    } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
+      query = query.or(`director_id.is.null,director_id.eq.${user.id}`);
+    }
+
+    const { data, error } = await query;
     if (!error) setProfiles(data || []);
   };
 

@@ -164,6 +164,8 @@ function UsersPage() {
     
     if (user.role === 'director') {
       query = query.eq('director_id', user.id);
+    } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
+      query = query.or(`director_id.is.null,director_id.eq.${user.id}`);
     }
     
     const { data, error } = await query.order('username', { ascending: true });

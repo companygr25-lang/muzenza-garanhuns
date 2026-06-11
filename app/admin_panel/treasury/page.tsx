@@ -102,6 +102,8 @@ export default function TreasuryPage() {
       let query = supabase.from('treasury_contributions').select('*');
       if (user.role === 'director') {
         query = query.eq('director_id', user.id);
+      } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
+        query = query.or(`director_id.is.null,director_id.eq.${user.id}`);
       }
       const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -130,6 +132,8 @@ export default function TreasuryPage() {
       let fallbackData = saved ? JSON.parse(saved) : [];
       if (user.role === 'director') {
         fallbackData = fallbackData.filter((c: any) => c.director_id === user.id);
+      } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
+        fallbackData = fallbackData.filter((c: any) => !c.director_id || c.director_id === user.id);
       }
       setContributions(fallbackData);
       calculateStats(fallbackData);

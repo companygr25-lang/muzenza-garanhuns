@@ -46,7 +46,7 @@ export default function EventsPage() {
   const fetchEvents = async () => {
     if (!user) return;
     let query = supabase.from('events').select('*');
-    if (user.role === 'director') {
+    if (user.role === 'director' || user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
       query = query.or(`director_id.eq.${user.id},director_id.is.null`);
     }
     const { data, error } = await query.order('date', { ascending: true });
