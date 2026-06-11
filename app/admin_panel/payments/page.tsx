@@ -219,12 +219,13 @@ export default function PaymentsPage() {
   const [reportLoading, setReportLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPaid, setFilterPaid] = useState<'all' | 'paid' | 'pending'>('all');
-  const [paymentMonths, setPaymentMonths] = useState(1);
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
 
   const pixPayload = React.useMemo(() => {
     if (!pixData.key || !pixData.name) return '';
-    return generatePixPayload(pixData.key, pixData.name, 'GARANHUNS', paymentMonths * 50);
-  }, [pixData.key, pixData.name, paymentMonths]);
+    const cleanAmount = paymentAmount ? parseFloat(paymentAmount.replace(',', '.')) : undefined;
+    return generatePixPayload(pixData.key, pixData.name, 'GARANHUNS', cleanAmount);
+  }, [pixData.key, pixData.name, paymentAmount]);
 
   const fetchPix = async () => {
     if (!user) return;
@@ -464,35 +465,41 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              {/* Seletor de Mensalidades Acumuladas */}
+              {/* Definição de Valor do Pagamento */}
               <div className="p-6 bg-[#121212] border border-[#333333] rounded-2xl space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-red">Fazer Pagamento Acumulado</p>
-                <p className="text-xs text-gray-400 font-bold uppercase leading-tight">Escolha quantas mensalidades quer pagar ao mesmo tempo:</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 6, 12].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setPaymentMonths(m)}
-                      className={cn(
-                        "py-3 rounded-xl text-center font-black transition-all border text-xs cursor-pointer",
-                        paymentMonths === m
-                          ? "bg-brand-red border-brand-red text-white shadow-lg"
-                          : "bg-black/40 border-[#333333] hover:border-gray-500 text-gray-400"
-                      )}
-                    >
-                      {m}x
-                    </button>
-                  ))}
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-red">Valor do Pagamento</p>
+                <p className="text-xs text-gray-400 font-bold uppercase leading-tight">Defina o valor a ser pago via PIX:</p>
+                <div className="relative flex items-center">
+                  <span className="absolute left-4 text-xs font-black text-gray-500 uppercase tracking-widest">R$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Deixe em branco para preencher no banco"
+                    value={paymentAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // Allow digits, dot, comma
+                      if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                        setPaymentAmount(val);
+                      }
+                    }}
+                    className="w-full bg-black/40 border border-[#333333] hover:border-gray-500 focus:border-brand-red focus:outline-none rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-white transition-all placeholder:text-gray-600"
+                  />
                 </div>
                 <div className="pt-2 flex items-center justify-between border-t border-[#333333]/60 text-[10px]">
-                  <span className="text-gray-500 font-bold uppercase tracking-wider">Quantidade acumulada:</span>
-                  <span className="text-white font-black italic">{paymentMonths} {paymentMonths === 1 ? 'Mês' : 'Meses'}</span>
+                  <span className="text-gray-500 font-bold uppercase tracking-wider">Modo de cobrança:</span>
+                  <span className="text-white font-black italic">
+                    {paymentAmount && parseFloat(paymentAmount.replace(',', '.')) > 0 ? 'VALOR DEFINIDO' : 'DEFINIDO NA TRANSAÇÃO / NO BANCO'}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-500 font-bold uppercase tracking-wider">Valor total:</span>
-                  <span className="text-brand-red font-black text-sm italic bg-brand-red/10 px-3 py-1 rounded-lg border border-brand-red/20">R$ {(paymentMonths * 50).toFixed(2)}</span>
-                </div>
+                {paymentAmount && parseFloat(paymentAmount.replace(',', '.')) > 0 && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500 font-bold uppercase tracking-wider">Valor total:</span>
+                    <span className="text-brand-red font-black text-sm italic bg-brand-red/10 px-3 py-1 rounded-lg border border-brand-red/20">
+                      R$ {parseFloat(paymentAmount.replace(',', '.')).toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="text-center">
@@ -541,7 +548,15 @@ export default function PaymentsPage() {
                       )}
                     </button>
                     <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest max-w-[250px] text-center">
-                      Escaneie com o app do seu banco para confirmar as {paymentMonths} {paymentMonths === 1 ? 'mensalidade' : 'mensalidades'} no valor de <strong>R$ {(paymentMonths * 50).toFixed(2)}</strong> para <strong>{pixData.name}</strong> ({pixData.bank}).
+                      {paymentAmount && parseFloat(paymentAmount.replace(',', '.')) > 0 ? (
+                        <>
+                          Escaneie com o app do seu banco para confirmar o pagamento no valor de <strong>R$ {parseFloat(paymentAmount.replace(',', '.')).toFixed(2)}</strong> para <strong>{pixData.name}</strong> ({pixData.bank}).
+                        </>
+                      ) : (
+                        <>
+                          Escaneie com o app do seu banco e <strong>adicione o valor desejado</strong> na hora do pagamento para <strong>{pixData.name}</strong> ({pixData.bank}).
+                        </>
+                      )}
                     </p>
                   </motion.div>
                 )}
