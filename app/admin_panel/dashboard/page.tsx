@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { supabase } from '@/lib/supabase';
-import { handleSupabaseError, OperationType, cn } from '@/lib/utils';
+import { handleSupabaseError, OperationType, cn, belongsToDirector } from '@/lib/utils';
 import { 
   Users, 
   Calendar, 
@@ -71,30 +71,33 @@ export default function DashboardPage() {
   const fetchStats = async () => {
     if (!user) return;
     try {
-      let userQuery = supabase.from('users').select('*', { count: 'exact', head: true });
-      let eventQuery = supabase.from('events').select('*', { count: 'exact', head: true });
-      let pendingQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', false).eq('role', 'user').neq('username', 'BOLACHA');
-      let confirmedQuery = supabase.from('users').select('*', { count: 'exact', head: true }).eq('monthly_paid', true).eq('role', 'user').neq('username', 'BOLACHA');
-      let treasuryQuery = supabase.from('treasury_contributions').select('amount').eq('status', 'approved');
+      let userQuery = supabase.from('users').select('id, director_id, role, username');
+      let eventQuery = supabase.from('events').select('id, director_id');
+      let pendingQuery = supabase.from('users').select('id, director_id, monthly_paid, role, username');
+      let confirmedQuery = supabase.from('users').select('id, director_id, monthly_paid, role, username');
+      let treasuryQuery = supabase.from('treasury_contributions').select('amount, director_id, status');
 
       if (user.role === 'director') {
         userQuery = userQuery.eq('director_id', user.id);
-        eventQuery = eventQuery.or(`director_id.eq.${user.id},director_id.is.null`);
         pendingQuery = pendingQuery.eq('director_id', user.id);
         confirmedQuery = confirmedQuery.eq('director_id', user.id);
         treasuryQuery = treasuryQuery.eq('director_id', user.id);
       } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
         userQuery = userQuery.or(`director_id.is.null,director_id.eq.${user.id}`);
-        eventQuery = eventQuery.or(`director_id.eq.${user.id},director_id.is.null`);
         pendingQuery = pendingQuery.or(`director_id.is.null,director_id.eq.${user.id}`);
         confirmedQuery = confirmedQuery.or(`director_id.is.null,director_id.eq.${user.id}`);
         treasuryQuery = treasuryQuery.or(`director_id.eq.${user.id},director_id.is.null`);
       }
 
-      const { count: userCount } = await userQuery;
-      const { count: eventCount } = await eventQuery;
-      const { count: pendingCount } = await pendingQuery;
-      const { count: confirmedCount } = await confirmedQuery;
+      const { data: usersData } = await userQuery;
+      const { data: eventsData } = await eventQuery;
+      const { data: pendData } = await pendingQuery;
+      const { data: confData } = await confirmedQuery;
+
+      const activeMembers = (usersData || []).filter((u: any) => belongsToDirector(u.director_id, user)).length;
+      const openEvents = (eventsData || []).filter((e: any) => belongsToDirector(e.director_id, user)).length;
+      const pendingPayments = (pendData || []).filter((u: any) => u.role === 'user' && u.username?.toUpperCase() !== 'BOLACHA' && !u.monthly_paid && belongsToDirector(u.director_id, user)).length;
+      const confirmedPayments = (confData || []).filter((u: any) => u.role === 'user' && u.username?.toUpperCase() !== 'BOLACHA' && u.monthly_paid && belongsToDirector(u.director_id, user)).length;
 
       // Fetch treasury contributions approved
       let totalTreasury = 0;
@@ -102,7 +105,9 @@ export default function DashboardPage() {
         const { data: treasuryData, error: tErr } = await treasuryQuery;
         
         if (!tErr && treasuryData) {
-          totalTreasury = treasuryData.reduce((sum: number, c: any) => sum + Number(c.amount), 0);
+          totalTreasury = treasuryData
+            .filter((c: any) => c.status === 'approved' && belongsToDirector(c.director_id, user))
+            .reduce((sum: number, c: any) => sum + Number(c.amount), 0);
         } else {
           // If error/table missing (handled gracefully), check local fallback
           if (typeof window !== 'undefined') {
@@ -110,7 +115,7 @@ export default function DashboardPage() {
             if (saved) {
               const fallbackData = JSON.parse(saved);
               totalTreasury = fallbackData
-                .filter((c: any) => c.status === 'approved' && (user.role !== 'director' || c.director_id === user.id))
+                .filter((c: any) => c.status === 'approved' && belongsToDirector(c.director_id, user))
                 .reduce((sum: number, c: any) => sum + Number(c.amount), 0);
             }
           }
@@ -120,10 +125,10 @@ export default function DashboardPage() {
       }
 
       setStats({
-        activeMembers: userCount || 0,
-        pendingPayments: pendingCount || 0,
-        confirmedPayments: confirmedCount || 0,
-        openEvents: eventCount || 0,
+        activeMembers: activeMembers || 0,
+        pendingPayments: pendingPayments || 0,
+        confirmedPayments: confirmedPayments || 0,
+        openEvents: openEvents || 0,
         treasuryTotal: totalTreasury
       });
     } catch (err) {

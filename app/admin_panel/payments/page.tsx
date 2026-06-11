@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 import { generatePixPayload } from '@/lib/pix-utils';
 
 export default function PaymentsPage() {
@@ -325,7 +325,9 @@ export default function PaymentsPage() {
       if (error) {
         console.error("Erro ao carregar alunos para relatório:", error);
       } else {
-        setStudents(data || []);
+        const allStudents = data || [];
+        const filtered = allStudents.filter((s: any) => belongsToDirector(s.director_id, user));
+        setStudents(filtered);
       }
     } catch (err) {
       console.error(err);

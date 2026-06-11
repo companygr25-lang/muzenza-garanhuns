@@ -18,7 +18,7 @@ import {
   Users
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 
 interface Contribution {
   id: string;
@@ -113,8 +113,10 @@ export default function TreasuryPage() {
         setDbError(true);
         loadLocalFallback();
       } else {
-        setContributions(data || []);
-        calculateStats(data || []);
+        const allContributions = data || [];
+        const filtered = allContributions.filter((c: any) => belongsToDirector(c.director_id, user));
+        setContributions(filtered);
+        calculateStats(filtered);
       }
     } catch (err) {
       console.error("Erro ao buscar contribuições:", err);
@@ -130,11 +132,7 @@ export default function TreasuryPage() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('muzenza_local_treasury');
       let fallbackData = saved ? JSON.parse(saved) : [];
-      if (user.role === 'director') {
-        fallbackData = fallbackData.filter((c: any) => c.director_id === user.id);
-      } else if (user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
-        fallbackData = fallbackData.filter((c: any) => !c.director_id || c.director_id === user.id);
-      }
+      fallbackData = fallbackData.filter((c: any) => belongsToDirector(c.director_id, user));
       setContributions(fallbackData);
       calculateStats(fallbackData);
     }

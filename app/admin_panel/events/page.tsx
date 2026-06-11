@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 
 interface Event {
   id: string;
@@ -54,7 +54,9 @@ export default function EventsPage() {
     if (error) {
       console.error("Erro ao buscar eventos:", error);
     } else {
-      setEvents(data || []);
+      const allEvents = data || [];
+      const filtered = allEvents.filter((ev: any) => belongsToDirector(ev.director_id, user));
+      setEvents(filtered);
     }
   };
 

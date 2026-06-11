@@ -14,7 +14,7 @@ import {
   Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 import { format, subDays, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -54,7 +54,11 @@ export default function AttendancePage() {
     }
 
     const { data, error } = await query;
-    if (!error) setProfiles(data || []);
+    if (!error) {
+      const allProfiles = data || [];
+      const filtered = allProfiles.filter((p: any) => belongsToDirector(p.director_id, user));
+      setProfiles(filtered);
+    }
   };
 
   const fetchAttendance = async (date: Date) => {

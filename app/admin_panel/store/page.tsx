@@ -14,7 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 import Image from 'next/image';
 
 interface Product {
@@ -29,7 +29,7 @@ interface Product {
 
 const StorePage = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   
   const [showAdd, setShowAdd] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -53,7 +53,9 @@ const StorePage = () => {
     if (error) {
       console.error("Erro ao buscar produtos:", error);
     } else {
-      setProducts(data || []);
+      const allProducts = data || [];
+      const filtered = allProducts.filter((item: any) => belongsToDirector(item.director_id, user));
+      setProducts(filtered);
     }
   };
 
@@ -73,7 +75,7 @@ const StorePage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +88,8 @@ const StorePage = () => {
           stock: Number(newStock),
           category: newCat,
           image_url: newImage,
-          on_sale: onSale
+          on_sale: onSale,
+          director_id: user?.id
         }]);
 
       if (error) throw error;

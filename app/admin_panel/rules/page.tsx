@@ -17,18 +17,31 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 export default function RulesPage() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [rules, setRules] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchRules = async () => {
+    if (!user) return;
     try {
-      const { data, error } = await supabase
+      const configId = user.role === 'director' ? user.id : 'global';
+      let { data, error } = await supabase
         .from('config')
         .select('rules')
-        .eq('id', 'global')
+        .eq('id', configId)
         .single();
+      
+      // Fallback for director if no config/rules exist yet
+      if ((error || !data || !Array.isArray(data.rules) || data.rules.length === 0) && user.role === 'director') {
+        const { data: globalData } = await supabase
+          .from('config')
+          .select('rules')
+          .eq('id', 'global')
+          .single();
+        data = globalData;
+        error = null;
+      }
       
       if (!error && data) {
         const fetchedRules = Array.isArray(data.rules) ? data.rules : [];
@@ -47,16 +60,21 @@ export default function RulesPage() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchRules();
-  }, []);
+    if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchRules();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleSave = async () => {
+    if (!user) return;
     try {
+      const configId = user.role === 'director' ? user.id : 'global';
       const { error } = await supabase
         .from('config')
         .upsert({
-          id: 'global',
+          id: configId,
           rules: rules
         });
       

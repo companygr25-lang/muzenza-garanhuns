@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-provider';
 import { supabase } from '@/lib/supabase';
 import { playNotificationSound } from '@/lib/sound';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 import { 
   Calendar, 
   ShoppingBag, 
@@ -29,32 +29,56 @@ export default function UserDashboard() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!user) return;
       try {
         // Fetch Events
         const { data: eventsData } = await supabase
           .from('events')
           .select('*')
-          .order('date', { ascending: true })
-          .limit(3);
+          .order('date', { ascending: true });
         
         // Fetch Store Items (Prioritize Promotions)
         const { data: itemsData } = await supabase
           .from('store_items')
           .select('*')
           .order('on_sale', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(3);
+          .order('created_at', { ascending: false });
 
         // Fetch Rules
+        let configId = 'global';
+        if (user && user.director_id) {
+          configId = user.director_id;
+        } else if (user && user.role === 'director') {
+          configId = user.id;
+        }
+
         const { data: configData } = await supabase
           .from('config')
           .select('rules')
-          .eq('id', 'global')
+          .eq('id', configId)
           .single();
 
-        setEvents(eventsData || []);
-        setStoreItems(itemsData || []);
-        setRules(configData?.rules || []);
+        let fetchedRules = configData?.rules || [];
+        if ((!fetchedRules || fetchedRules.length === 0) && configId !== 'global') {
+          const { data: globalConfig } = await supabase
+            .from('config')
+            .select('rules')
+            .eq('id', 'global')
+            .single();
+          fetchedRules = globalConfig?.rules || [];
+        }
+
+        const filteredEvents = (eventsData || [])
+          .filter((ev: any) => belongsToDirector(ev.director_id, user))
+          .slice(0, 3);
+
+        const filteredItems = (itemsData || [])
+          .filter((item: any) => belongsToDirector(item.director_id, user))
+          .slice(0, 3);
+
+        setEvents(filteredEvents);
+        setStoreItems(filteredItems);
+        setRules(fetchedRules);
       } catch (err) {
         console.error("Erro ao carregar dashboard:", err);
       } finally {
@@ -83,7 +107,7 @@ export default function UserDashboard() {
     return () => {
       supabase.removeChannel(dashboardChannel);
     };
-  }, []);
+  }, [user]);
 
   if (loading) {
      return (

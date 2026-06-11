@@ -18,7 +18,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, belongsToDirector } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -173,7 +173,9 @@ function UsersPage() {
     if (error) {
       console.error("Erro ao buscar usuários:", error);
     } else {
-      setUsers(data || []);
+      const allUsers = data || [];
+      const filtered = allUsers.filter((u: any) => belongsToDirector(u.director_id, user));
+      setUsers(filtered);
     }
   }, [user]);
 
