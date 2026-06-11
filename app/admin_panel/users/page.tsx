@@ -336,6 +336,8 @@ function UsersPage() {
     setIsEditModalOpen(true);
   };
 
+
+
   const handleTogglePayment = async (id: string, current: boolean, name: string, currentMonths = 0) => {
     if (current) {
       const confirmAction = window.confirm(`Deseja estornar o pagamento de ${name}? Isso definirá as mensalidades pagas como 0 e o status como pendente.`);
