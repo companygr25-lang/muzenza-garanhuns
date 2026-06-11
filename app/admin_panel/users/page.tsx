@@ -465,6 +465,25 @@ function UsersPage() {
 
   const graduations = [
     'Sem Corda',
+    // Graduações Infantis
+    'Crua (Infantil)',
+    'Crua/Cinza (Infantil)',
+    'Crua/Amarela (Infantil)',
+    'Crua/Laranja (Infantil)',
+    'Crua/Verde (Infantil)',
+    'Crua/Vermelha (Infantil)',
+    'Crua/Azul (Infantil)',
+    'Cinza/Laranja (Infantil)',
+    'Cinza/Verde (Infantil)',
+    'Cinza/Vermelha (Infantil)',
+    'Cinza/Azul (Infantil)',
+    'Amarela/Verde (Infantil)',
+    'Amarela/Vermelha (Infantil)',
+    'Amarela/Azul (Infantil)',
+    'Laranja/Vermelha (Infantil)',
+    'Laranja/Azul (Infantil)',
+    'Verde/Azul (Infantil)',
+    // Graduações Adultas
     'Cinza',
     'Cinza/Amarela',
     'Amarela',

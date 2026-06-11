@@ -685,6 +685,25 @@ export default function LandingPage() {
                         className="w-full bg-[#1A1A1A] border border-[#333333] rounded-xl py-4 md:py-5 pl-14 pr-6 font-bold tracking-tight text-white outline-none focus:border-brand-red transition-all appearance-none"
                       >
                         <option value="Sem Corda">Sem Corda</option>
+                        {/* Graduações Infantis */}
+                        <option value="Crua (Infantil)">Crua (Infantil)</option>
+                        <option value="Crua/Cinza (Infantil)">Crua/Cinza (Infantil)</option>
+                        <option value="Crua/Amarela (Infantil)">Crua/Amarela (Infantil)</option>
+                        <option value="Crua/Laranja (Infantil)">Crua/Laranja (Infantil)</option>
+                        <option value="Crua/Verde (Infantil)">Crua/Verde (Infantil)</option>
+                        <option value="Crua/Vermelha (Infantil)">Crua/Vermelha (Infantil)</option>
+                        <option value="Crua/Azul (Infantil)">Crua/Azul (Infantil)</option>
+                        <option value="Cinza/Laranja (Infantil)">Cinza/Laranja (Infantil)</option>
+                        <option value="Cinza/Verde (Infantil)">Cinza/Verde (Infantil)</option>
+                        <option value="Cinza/Vermelha (Infantil)">Cinza/Vermelha (Infantil)</option>
+                        <option value="Cinza/Azul (Infantil)">Cinza/Azul (Infantil)</option>
+                        <option value="Amarela/Verde (Infantil)">Amarela/Verde (Infantil)</option>
+                        <option value="Amarela/Vermelha (Infantil)">Amarela/Vermelha (Infantil)</option>
+                        <option value="Amarela/Azul (Infantil)">Amarela/Azul (Infantil)</option>
+                        <option value="Laranja/Vermelha (Infantil)">Laranja/Vermelha (Infantil)</option>
+                        <option value="Laranja/Azul (Infantil)">Laranja/Azul (Infantil)</option>
+                        <option value="Verde/Azul (Infantil)">Verde/Azul (Infantil)</option>
+                        {/* Graduações Adultas */}
                         <option value="Cinza">Cinza</option>
                         <option value="Cinza/Amarela">Cinza/Amarela</option>
                         <option value="Amarela">Amarela</option>
