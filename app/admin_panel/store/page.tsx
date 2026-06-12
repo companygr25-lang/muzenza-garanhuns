@@ -45,10 +45,12 @@ const StorePage = () => {
   const [onSale, setOnSale] = useState(false);
 
   const fetchProducts = async () => {
-    const { data, error } = await supabase
-      .from('store_items')
-      .select('*')
-      .order('name', { ascending: true });
+    if (!user) return;
+    let query = supabase.from('store_items').select('*');
+    if (user.role === 'director' || user.username?.toUpperCase() === 'BOLACHA' || user.role === 'admin') {
+      query = query.or(`director_id.eq.${user.id},director_id.is.null`);
+    }
+    const { data, error } = await query.order('name', { ascending: true });
     
     if (error) {
       console.error("Erro ao buscar produtos:", error);
